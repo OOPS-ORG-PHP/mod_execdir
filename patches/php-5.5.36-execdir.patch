@@ -532,7 +532,7 @@ diff -urNp php-5.5.36.org/ext/standard/exec.c php-5.5.36/ext/standard/exec.c
  	}
  
 +	if (strlen(command) != command_len) {
-+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot use '\\0' character on command");
++		php_error_docref(NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
 +		RETURN_FALSE;
 +	}
 +
@@ -599,7 +599,7 @@ diff -urNp php-5.5.36.org/ext/standard/file.c php-5.5.36/ext/standard/file.c
  	}
  
 +	if (strlen(command) != command_len) {
-+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot use '\\0' character on command");
++		php_error_docref(NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
 +		RETURN_FALSE;
 +	}
 +
@@ -636,7 +636,7 @@ diff -urNp php-5.5.36.org/ext/standard/proc_open.c php-5.5.36/ext/standard/proc_
  
 -	command = pestrdup(command, is_persistent);
 +	if (strlen(command) != command_len) {
-+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot use '\\0' character on command");
++		php_error_docref(NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
 +		RETURN_FALSE;
 +	}
 +

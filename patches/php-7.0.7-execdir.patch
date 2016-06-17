@@ -550,7 +550,7 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
  	}
  
 +	if (strlen(command) != command_len) {
-+		php_error_docref(NULL, E_WARNING, "Cannot use '\\0' character on command");
++		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
 +		RETURN_FALSE;
 +	}
 +
@@ -617,7 +617,7 @@ diff -urNp php-7.0.7.org/ext/standard/file.c php-7.0.7/ext/standard/file.c
  	}
  
 +	if (strlen(command) != command_len) {
-+		php_error_docref(NULL, E_WARNING, "Cannot use '\\0' character on command");
++		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
 +		RETURN_FALSE;
 +	}
 +
@@ -654,7 +654,7 @@ diff -urNp php-7.0.7.org/ext/standard/proc_open.c php-7.0.7/ext/standard/proc_op
  
 -	command = pestrdup(command, is_persistent);
 +	if (strlen(command) != command_len) {
-+		php_error_docref(NULL, E_WARNING, "Cannot use '\\0' character on command");
++		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
 +		RETURN_FALSE;
 +	}
 +
