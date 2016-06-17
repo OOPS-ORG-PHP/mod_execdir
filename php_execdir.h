@@ -1,0 +1,83 @@
+/*
+  +----------------------------------------------------------------------+
+  | mod_exec                                                             |
+  +----------------------------------------------------------------------+
+  | Copyright (c) 1999-2016 JoungKyun.Kim                                |
+  +----------------------------------------------------------------------+
+  | This source file is subject to version 3.0 of the PHP license,       |
+  | that is bundled with this package in the file LICENSE, and is        |
+  | available at through the world-wide-web at                           |
+  | http://www.php.net/license/3_0.txt.                                  |
+  | If you did not receive a copy of the PHP license and are unable to   |
+  | obtain it through the world-wide-web, please send a note to          |
+  | license@php.net so we can mail you a copy immediately.               |
+  +----------------------------------------------------------------------+
+  | Author: JoungKyun.Kim <http://oops.org>                              |
+  +----------------------------------------------------------------------+
+
+  $Id: $
+*/
+
+#ifndef PHP_EXECDIR_H
+#define PHP_EXECDIR_H
+
+#ifndef PHP_EXECDIR
+	#define PHP_EXECDIR ""
+#endif
+
+#define EXECDIR_EXT_VERSION "1.0.0"
+
+extern zend_module_entry execdir_module_entry;
+#define execdir_module_ptr &execdir_module_entry
+#define phpext_execdir_ptr execdir_module_ptr
+
+#ifdef PHP_WIN32
+	#define PHP_EXECDIR_API __declspec(dllexport)
+#else
+	#define PHP_EXECDIR_API
+#endif
+
+#ifdef ZTS
+	#include "TSRM.h"
+	#define EXECDIR_G(v) TSRMG(execdir_globals_id, zend_execdir_globals *, v)
+#else
+	#define EXECDIR_G(v) (execdir_globals.v)
+#endif
+
+ZEND_BEGIN_MODULE_GLOBALS(execdir)
+	char * exec_dir;
+ZEND_END_MODULE_GLOBALS(execdir)
+
+PHP_MINIT_FUNCTION (execdir);
+PHP_MSHUTDOWN_FUNCTION (execdir);
+PHP_RINIT_FUNCTION (execdir);
+PHP_RSHUTDOWN_FUNCTION (execdir);
+PHP_MINFO_FUNCTION (execdir);
+
+PHP_FUNCTION (exec_re);
+PHP_FUNCTION (system_re);
+PHP_FUNCTION (passthru_re);
+PHP_FUNCTION (pcntl_exec_re);
+PHP_FUNCTION (shell_exec_re);
+PHP_FUNCTION (popen_re);
+PHP_FUNCTION (proc_open_re);
+
+#if PHP_VERSION_ID < 60000
+	#define RETURN_EXECDIR_STRING(s,i) RETURN_STRING(s,i)
+	#define execdir_hash_exists(ht,key) zend_hash_exists(ht,key,strlen(key)+1)
+	#define zend_ini_entry_def zend_ini_entry
+#else
+	#define RETURN_EXECDIR_STRING(s,i) RETURN_STRING(s)
+	#define execdir_hash_exists(ht,key) zend_hash_str_exists(ht,key,strlen(key))
+#endif
+
+#endif /* PHP_EXECDIR_H */
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */

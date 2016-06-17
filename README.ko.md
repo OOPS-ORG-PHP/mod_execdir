@@ -1,0 +1,115 @@
+PHP execdir extension
+===
+
+## License
+
+Copyright (c) 2016 JoungKyun.Kim &lt;http://oops.org&gt; All rights reserved.
+
+This program is under PHP License.
+
+##Description
+
+***mod_execdir*** 확장은 특정 디렉토리에 있는 명령만 실행할 수 있도록 제한을 하여, web shell이나 system shell injection 공격을 <u>원천적으로 방어</u>할 수 있습니다.
+
+이 기능은 PHP 5.5 이전의 ***safe_mode_exec_dir*** 기능을 향상 구현한 것입니다.
+
+***safe_mode_exec_dir*** 기능은 오직 ***SAFE MODE***에서만 사용이 가능하며, PHP 5.5 이후 부터는 ***SAFE MODE***가 제거 되면서 더 이상 사용을 할 수가 없습니다. 또한, ***safe_mode_exec_dir***의 parser는 너무나 간단하게 되어 있어 사용을 하기에 제약이 많았습니다.
+
+execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하여, ***SAFE MODE***가 아니고, 또한 PHP 5.5 이 후 버전에서도 사용할 수 있도록 지원을 합니다.
+
+2005년 5월 PHPBB의 <u>highlight syntax security hole</u> 때문에 만들어 졌으며, 대형 비지니스 사이트와 안녕 리눅스 배포본에 적용이 되어 15년 이상 검증이 되었습니다.
+
+이 기능은 source patch 또는 php extension 으로 제공이 되며, 이 기능은 다음의 PHP 함수에 영향을 미칩니다:
+
+  * exec
+  * system
+  * passthru
+  * shell_exec
+  * popen
+  * proc_open
+  * pcntl_exec
+  * backtick operator
+
+## Installation
+
+### 1. Requirement
+
+PHP 5 이상에서 사용이 가능합니다. 실제 테스트는 PHP 5.5 이 후 버전에서만 테스트 되었습니다.
+
+
+### 2. PHP source patch
+
+mod_execdir/patches 디렉토리에서 빌드할 PHP 버전에 맞는 patch 파일을 다운도르 합니다. 현재 빌드하려는 버전이 없을 경우에는 가장 최신의 버전을 다운로드 받으십시오. 이 의미는 이전 버전 패치가 문제가 없거나 또는 아직 지원을 하지 않을 수도 있음을 의미 합니다. 여기서는 PHP 7.0.7을 예로 듭니다.
+
+```shell
+[root@host ~]$ cd php-7.0.7
+[root@host php-7.0.7]$ wget https://raw.githubusercontent.com/OOPS-ORG-PHP/mod_execdir/master/patches/php-7.0.7-execdir.patch
+[root@host php-7.0.7]$ patch -p1 < ./php-7.0.7-execdir.patch
+[root@host php-7.0.7]$ ./configure --with-exec-dir=/var/lib/php/bin ... (and with other options)
+[root@host php-7.0.7]$ make && make install
+
+
+### 3. mod_execdir extension
+
+```shell
+[root@host mod_execdir]$ phpize
+[root@host mod_execdir]$ ./configure --with-execdir=/var/lib/php/bin
+[root@host mod_execdir]$ make install
+```
+
+## Usage
+
+### 1. 설정
+php.ini에 다음의 설정을 추가 합니다.
+
+```ini
+extension = execdir.so
+execdir   = /var/lib/php/bin
+```
+
+이 모듈은 기존의 함수를 대체하는 것이기 때문에, 가장 마지막에 로딩하는 것을 권장 합니다.
+
+### 2. 명령어 파서 지원 형식
+
+paser에서 지원하는 형식은 다음과 같습니다:
+
+```
+command
+$(command)
+`command`
+command; command
+command $(command)
+command $(command $(command))
+command $(command `command`)
+command `command`
+command | command
+command && command
+command || command
+```
+
+파서 적용 예는 다음과 같습니다:
+
+```php
+exec ('ls -al /etc/hosts', $o, $r);
+exec ('ls -al /etc/ | grep hosts', $o, $r);
+exec ('/bin/ls /etc/ | grep hosts', $o, $r);
+exec ('cat $(echo "/etc/passwd") | grep root; ls -al', $o, $r);
+exec ('cat `echo "/etc/passwd"` | grep root; ls -al', $o, $r);
+exec ("echo '$(ls -l | grep abc)' | grep abc");
+exec ('echo "$(ls -l | grep abc)" | grep abc');
+```
+
+execdir 설정이 되어 있을 경우, 위의 코드들은 실제로는 다음과 같이 실행이 됩니다:
+
+```php
+exec ('/var/lib/php/bin/ls -al /etc/hosts', $o, $r);
+exec ('/var/lib/php/bin/ls -al /etc/ | /var/lib/php/bin/grep hosts', $o, $r);
+exec ('/var/lib/php/bin/ls -al /etc/ | /var/lib/php/bin/grep hosts', $o, $r);
+exec ('/var/lib/php/bin/cat $(/var/lib/php/bin/echo "/etc/passwd") | /var/lib/php/bin/grep root; /var/lib/php/bin/ls -al', $o, $r);
+exec ('/var/lib/php/bin/cat $(/var/lib/php/bin/echo "/etc/passwd") | /var/lib/php/bin/grep root; /var/lib/php/bin/ls -al', $o, $r);
+exec ("/var/lib/php/bin/echo '$(ls -l | grep abc)' | /var/lib/php/bin/grep abc");
+exec ('/var/lib/php/bin/echo "$(/var/lib/php/bin/ls -l | /var/lib/php/bin/grep abc)" | /var/lib/php/bin/grep abc');
+```
+
+### Contributors
+JoungKyun.Kim
