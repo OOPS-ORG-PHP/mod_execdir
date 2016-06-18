@@ -123,5 +123,48 @@ exec ("/var/lib/php/bin/echo '$(ls -l | grep abc)' | /var/lib/php/bin/grep abc")
 exec ('/var/lib/php/bin/echo "$(/var/lib/php/bin/ls -l | /var/lib/php/bin/grep abc)" | /var/lib/php/bin/grep abc');
 ```
 
+### 3. APIs
+
+The following case is applied with building in mod_execdir as PHP dynamic extension.
+
+#### 1. Original functions
+
+You can call original functions with "***_orig***" postfix.
+
+```php
+<?php
+exec_orig ('ls /etc/hosts', $o, $r);
+var_dump ($o);
+?>
+```
+
+The list of original functions is follow:
+
+  * exec_orig
+  * system_orig
+  * passthru_orig
+  * shell_exec_orig
+  * popen_orig
+
+### 2. mod_execdir APIs
+
+  * ***exec_re*** : mapping ***exec*** function
+  * ***system_re*** : mapping ***system*** function
+  * ***passthru_re*** : mapping ***passthru*** function
+  * ***shell_exec_re*** : mapping ***shell_exec*** function
+  * ***popen_re*** : mapping ***popen*** function
+  * ***jailed_shellcmd*** : return jailed shell command strings
+  ```
+  Prototype: (string) jailed_shellcmd (string path)
+  ```
+  
+  ```php
+  <?php
+  # Follow codes has same operation with "system(command)"
+  $jcmd = jailed_shellcmd ('/bin/ls');
+  system_orig ($jcmd);
+  ?>
+  ```
+
 ### Contributors
 JoungKyun.Kim
