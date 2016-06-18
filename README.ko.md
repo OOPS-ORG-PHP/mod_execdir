@@ -43,11 +43,10 @@ PHP 확장 모듈의 경우, PHP 5 호환 코드로 작성 하였지만, 실제 
 이 기능을 사용하기 위해서는 2가지의 방법이 있습니다. 이 중에서 원하는 방법을 선택 하십시오.
   1. PHP source에 직접 패치
     * 코드에 직접 패치를 하기 때문에 mod_execdir 보다 성능이 좋음.
-    * ***backtick operator*** 와 ***pcntl extension*** 까지 모두 적용
+    * ***pcntl_open*** fucntion 적용
   2. mod_execdir 확장 사용
     * 원 함수를 hooking 및 alias를 하기 때문에 소스 패치보다는 성능이 미세하게 떨어짐.
     * ***pcntl_open***은 별도의 pcntl_jailed 확장을 사용해야 함
-    * ***backtick operator*** 를 처리하지 못함
 
 
 

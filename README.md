@@ -41,12 +41,11 @@ For this features, we support 2 building method.
   1. build with direct patch on PHP source code
     * support from PHP 4.3 and later
     * better performance than mod_execdir.
-    * support ***pcntl_open*** and ***backtick operator***
+    * support ***pcntl_open***
   2. build with mod_execdir extension
     * support PHP 5 and later
     * verified test on PHP 5.5 and later
     * don't support ***pcntl_open***. Instead of using mod_jailed_pcntl extension (Not yet)
-    * can't verify about ***backtick opearator***
 
 
 ### 2. PHP source patch
