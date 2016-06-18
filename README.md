@@ -81,6 +81,13 @@ Add directory for restricted shell command.
 exec_dir   = /var/lib/php/bin
 ```
 
+If you patched source code PHP 5.3 and before, you must use "***safe_mode_exec_dir***" option instead of "***exec_dir***"
+
+```ini
+; This case, PHP 5.3 and before with patched PHP source code
+safe_mode_exec_dir = /var/lib/php/bin
+```
+
 ### 2. Command parser format
 
 Supported formats are as follows:
