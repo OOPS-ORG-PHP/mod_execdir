@@ -61,13 +61,16 @@ PHP_FUNCTION (pcntl_exec_re);
 PHP_FUNCTION (shell_exec_re);
 PHP_FUNCTION (popen_re);
 PHP_FUNCTION (proc_open_re);
+PHP_FUNCTION (jailed_shellcmd);
 
 #if PHP_VERSION_ID < 60000
 	#define RETURN_EXECDIR_STRING(s,i) RETURN_STRING(s,i)
+	#define RETVAL_EXECDIR_STRING(s,i) RETVAL_STRINGL(s,i,1)
 	#define execdir_hash_exists(ht,key) zend_hash_exists(ht,key,strlen(key)+1)
 	#define zend_ini_entry_def zend_ini_entry
 #else
 	#define RETURN_EXECDIR_STRING(s,i) RETURN_STRING(s)
+	#define RETVAL_EXECDIR_STRING(s,i) RETVAL_STRINGL(s,i)
 	#define execdir_hash_exists(ht,key) zend_hash_str_exists(ht,key,strlen(key))
 #endif
 

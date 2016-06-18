@@ -79,6 +79,7 @@ const zend_function_entry execdir_functions[] = {
 	PHP_FE (passthru_re, arginfo_passthru_re)
 	PHP_FE (shell_exec_re, NULL)
 	PHP_FE (popen_re, NULL)
+	PHP_FE (jailed_shellcmd, NULL)
 	{NULL, NULL, NULL}
 };
 /* }}} */
@@ -498,6 +499,33 @@ PHP_FUNCTION (pcntl_exec_re)
 }
 /* }}} */
 
+/* {{{ PHP_FUNCTION (string) jailed_shellcmd (string $path)
+ */
+PHP_FUNCTION (jailed_shellcmd)
+{
+	char        * cmd;
+	char        * jcmd;
+	size_t        cmdlen = 0;
+
+	if ( zend_parse_parameters (ZEND_NUM_ARGS() TSRMLS_CC, "s", &cmd, &cmdlen) == FAILURE ) {
+		return;
+	}
+
+    if ( ! cmdlen )
+		RETURN_EMPTY_STRING();
+
+    if ( strlen (cmd) != cmdlen ) {
+        php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
+		RETURN_EMPTY_STRING();
+    }
+
+	jcmd = get_jailed_shell_cmd (cmd);
+
+	RETVAL_EXECDIR_STRING (jcmd, strlen (jcmd));
+
+	efree (jcmd);
+}
+/* }}} */
 
 /*
  * Local variables:
