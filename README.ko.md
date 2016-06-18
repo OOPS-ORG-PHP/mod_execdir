@@ -51,7 +51,7 @@ mod_execdir/patches 디렉토리에서 빌드할 PHP 버전에 맞는 patch 파�
 [root@host php-7.0.7]$ patch -p1 < ./php-7.0.7-execdir.patch
 [root@host php-7.0.7]$ ./configure --with-exec-dir=/var/lib/php/bin ... (and with other options)
 [root@host php-7.0.7]$ make && make install
-
+```
 
 ### 3. 동적 확장으로 사용할 경우
 
