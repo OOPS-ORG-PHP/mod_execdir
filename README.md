@@ -19,7 +19,7 @@ The execdir exntesion is to complement the such disadvantages of ***safe_mode_ex
 
 This featurhe was made for <u>highlight syntax security hole of PHPBB</u> in May 2005. Also, it has been applied to large business site and AnNyung LInux distribution and verified more than 15 years.
 
-This feature is provided as the source patch or php extension, and affects follow PHP functions:
+This feature is provided as the source patch or php dynamic extension, and affects follow PHP functions:
 
   * exec
   * system
@@ -52,7 +52,7 @@ And execute configure with ***--with-exec-dir*** option.
 ```
 
 
-### 3. mod_execdir extension
+### 3. mod_execdir dynamic extension
 
 ```shell
 [root@host mod_execdir]$ phpize
