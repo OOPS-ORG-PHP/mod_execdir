@@ -34,7 +34,7 @@ execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하�
 
 ### 1. Requirement
 
-PHP 5 이상에서 사용이 가능합니다.
+PHP 5 와 PHP 7 이상에서 사용이 가능합니다.
 
 소스 patch의 경우 php 4.3 부터 지원을 하며, PHP 5.3 까지는 safe_mode_exec_dir ini 옵션을 이용 합니다. 5.4 부터는 exec_dir ini 옵션을 이용 하십시오.
 
