@@ -111,5 +111,49 @@ exec ("/var/lib/php/bin/echo '$(ls -l | grep abc)' | /var/lib/php/bin/grep abc")
 exec ('/var/lib/php/bin/echo "$(/var/lib/php/bin/ls -l | /var/lib/php/bin/grep abc)" | /var/lib/php/bin/grep abc');
 ```
 
-### Contributors
+### 3. APIs
+
+mod_execdir 확장 패키지로 빌드를 했을 경우에만 해당 됩니다.
+
+#### 1. Original functions
+
+기존의 함수들은 ***_orig*** 접미사를 이용하여 호출을 할 수 있습니다.
+
+```php
+<?php
+exec_orig ('ls /etc/hosts', $o, $r);
+var_dump ($o);
+?>
+```
+
+원 함수 목록은 다음과 같습니다.
+
+  * exec_orig
+  * system_orig
+  * passthru_orig
+  * shell_exec_orig
+  * popen_orig
+
+### 2. mod_execdir APIs
+
+  * ***exec_re*** : mapping ***exec*** function
+  * ***system_re*** : mapping ***system*** function
+  * ***passthru_re*** : mapping ***passthru*** function
+  * ***shell_exec_re*** : mapping ***shell_exec*** function
+  * ***popen_re*** : mapping ***popen*** function
+  * ***jailed_shellcmd*** : return jailed shell command strings
+  ```
+  Prototype: (string) jailed_shellcmd (string path)
+  ```
+  
+  ```php
+  <?php
+  # 다음 코드는 system(command) 과 동일하게 동작
+  $jcmd = jailed_shellcmd ('/bin/ls');
+  system_orig ($jcmd);
+  ?>
+  ```
+
+
+## Contributors
 JoungKyun.Kim
