@@ -64,14 +64,29 @@ mod_execdir/patches 디렉토리에서 빌드할 PHP 버전에 맞는 patch 파�
 ## Usage
 
 ### 1. 설정
+
 php.ini에 다음의 설정을 추가 합니다.
+
+php 동적 확장으로 빌드를 했을 경우에는 execdir.so 를 php.ini에서 로딩해 줘야 합니다.
 
 ```ini
 extension = execdir.so
-execdir   = /var/lib/php/bin
 ```
 
-이 모듈은 기존의 함수를 대체하는 것이기 때문에, 가장 마지막에 로딩하는 것을 권장 합니다.
+이 모듈은 기존의 system 함수들을 바꿔치기 하는 것이므로, 가장 마지막에 로딩되도록 추가해 줍니다.
+
+실행할 수 있는 쉘 실행 파일이 있는 디렉토리를 지정합니다.
+
+```ini
+exe_cdir   = /var/lib/php/bin
+```
+
+PHP 5.3 이하 버전에서 소스 패치를 했을 경우에는, "***exec_dir***" 대신에 "***safe_mode_exec_dir***" ini 옵션을 사용해야 합니다.
+
+```ini
+safe_mode_exec_dir = /var/lib/php/bin
+```
+
 
 ### 2. 명령어 파서 지원 형식
 
