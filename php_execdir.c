@@ -1,6 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | mod_execdir                                                          |
+  | mod_execdir v1                                                       |
   +----------------------------------------------------------------------+
   | Copyright (c) 1999-2016 JoungKyun.Kim                                |
   +----------------------------------------------------------------------+
@@ -200,46 +200,46 @@ static int safe_hook_execdir (void) {
 /* {{{ +-- static void php_exec_ex(INTERNAL_FUNCTION_PARAMETERS, int mode)
  */
 static void php_exec_ex (INTERNAL_FUNCTION_PARAMETERS, int mode) {
-    char   * cmd, * jcmd;
-    size_t   cmd_len;
-    zval   * ret_code = NULL, * ret_array = NULL;
-    int      ret;
+	char   * cmd, * jcmd;
+	size_t   cmd_len;
+	zval   * ret_code = NULL, * ret_array = NULL;
+	int      ret;
 
-    if ( mode ) {
-        if ( zend_parse_parameters (ZEND_NUM_ARGS () TSRMLS_CC, "s|z/", &cmd, &cmd_len, &ret_code) == FAILURE ) {
-            RETURN_FALSE;
-        }
-    } else {
-        if ( zend_parse_parameters (ZEND_NUM_ARGS () TSRMLS_CC, "s|z/z/", &cmd, &cmd_len, &ret_array, &ret_code) == FAILURE ) {
-            RETURN_FALSE;
-        }
-    }
-    if ( ! cmd_len ) {
-        php_error_docref (NULL TSRMLS_CC, E_WARNING, "Cannot execute a blank command");
-        RETURN_FALSE;
-    }
-    if ( strlen (cmd) != cmd_len ) {
-        php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
-        RETURN_FALSE;
-    }
+	if ( mode ) {
+		if ( zend_parse_parameters (ZEND_NUM_ARGS () TSRMLS_CC, "s|z/", &cmd, &cmd_len, &ret_code) == FAILURE ) {
+			RETURN_FALSE;
+		}
+	} else {
+		if ( zend_parse_parameters (ZEND_NUM_ARGS () TSRMLS_CC, "s|z/z/", &cmd, &cmd_len, &ret_array, &ret_code) == FAILURE ) {
+			RETURN_FALSE;
+		}
+	}
+	if ( ! cmd_len ) {
+		php_error_docref (NULL TSRMLS_CC, E_WARNING, "Cannot execute a blank command");
+		RETURN_FALSE;
+	}
+	if ( strlen (cmd) != cmd_len ) {
+		php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
+		RETURN_FALSE;
+	}
 
 	jcmd = get_jailed_shell_cmd (cmd);
 
-    if ( ! ret_array ) {
-        ret = php_exec (mode, jcmd, NULL, return_value TSRMLS_CC);
-    } else {
-        if ( Z_TYPE_P (ret_array) != IS_ARRAY ) {
-            zval_dtor (ret_array);
-            array_init (ret_array);
-        }
-        ret = php_exec (2, jcmd, ret_array, return_value TSRMLS_CC);
-    }
+	if ( ! ret_array ) {
+		ret = php_exec (mode, jcmd, NULL, return_value TSRMLS_CC);
+	} else {
+		if ( Z_TYPE_P (ret_array) != IS_ARRAY ) {
+			zval_dtor (ret_array);
+			array_init (ret_array);
+		}
+		ret = php_exec (2, jcmd, ret_array, return_value TSRMLS_CC);
+	}
 	efree (jcmd);
 
-    if ( ret_code ) {
-        zval_dtor (ret_code);
-        ZVAL_LONG (ret_code, ret);
-    }
+	if ( ret_code ) {
+		zval_dtor (ret_code);
+		ZVAL_LONG (ret_code, ret);
+	}
 }
 /* }}} */
 
@@ -383,14 +383,14 @@ PHP_FUNCTION (shell_exec_re)
 		return;
 	}
 
-    if ( ! command_len ) {
-        php_error_docref (NULL TSRMLS_CC, E_WARNING, "Cannot execute a blank command");
-        RETURN_FALSE;
-    }
-    if ( strlen (command) != command_len ) {
-        php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
-        RETURN_FALSE;
-    }
+	if ( ! command_len ) {
+		php_error_docref (NULL TSRMLS_CC, E_WARNING, "Cannot execute a blank command");
+		RETURN_FALSE;
+	}
+	if ( strlen (command) != command_len ) {
+		php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
+		RETURN_FALSE;
+	}
 
 	jcommand = get_jailed_shell_cmd (command);
 
@@ -441,14 +441,14 @@ PHP_FUNCTION (popen_re)
 		return;
 	}
 
-    if ( ! command_len ) {
-        php_error_docref (NULL TSRMLS_CC, E_WARNING, "Cannot execute a blank command");
-        RETURN_FALSE;
-    }
-    if ( strlen (command) != command_len ) {
-        php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
-        RETURN_FALSE;
-    }
+	if ( ! command_len ) {
+		php_error_docref (NULL TSRMLS_CC, E_WARNING, "Cannot execute a blank command");
+		RETURN_FALSE;
+	}
+	if ( strlen (command) != command_len ) {
+		php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
+		RETURN_FALSE;
+	}
 
 	posix_mode = estrndup (mode, mode_len);
 #ifndef PHP_WIN32
@@ -511,13 +511,13 @@ PHP_FUNCTION (jailed_shellcmd)
 		return;
 	}
 
-    if ( ! cmdlen )
+	if ( ! cmdlen )
 		RETURN_EMPTY_STRING();
 
-    if ( strlen (cmd) != cmdlen ) {
-        php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
+	if ( strlen (cmd) != cmdlen ) {
+		php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
 		RETURN_EMPTY_STRING();
-    }
+	}
 
 	jcmd = get_jailed_shell_cmd (cmd);
 

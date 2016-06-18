@@ -1,6 +1,6 @@
 /*
   +----------------------------------------------------------------------+
-  | mod_execdir                                                          |
+  | mod_execdir v1                                                       |
   +----------------------------------------------------------------------+
   | Copyright (c) 1999-2016 JoungKyun.Kim                                |
   +----------------------------------------------------------------------+
@@ -43,12 +43,12 @@ extern ZEND_DECLARE_MODULE_GLOBALS (execdir)
  * return value is needed to call efree
  */
 PHPAPI char * get_jailed_shell_cmd (char * cmd) {
-	size_t exec_len;
-	char *exec_dir;
-	char *_cmd;
+	size_t   exec_len;
+	char   * exec_dir;
+	char   * _cmd;
 
 	//exec_dir = PG(exec_dir);
-	exec_dir = EXECDIR_G(exec_dir);
+	exec_dir = EXECDIR_G (exec_dir);
 	exec_len = strlen (exec_dir);
 
 	if ( exec_len ) {
@@ -196,7 +196,7 @@ static char * php_jailed_shell_cmd (char * cmd, char * path) {
 		x_cmd = php_trim (debug_cmd, strlen (debug_cmd), NULL, 0, NULL, 3 TSRMLS_CC);
 		_cmd = ( x_cmd[0] == '/' ) ? estrdup (x_cmd + 1) : estrdup (x_cmd);
 #else
-		zend_string *zbuf, *zbuf_r;
+		zend_string * zbuf, * zbuf_r;
 
 		zbuf = zend_string_init (path, strlen (path), 0);
 		zbuf_r = php_trim (zbuf, NULL, 0, 3);
