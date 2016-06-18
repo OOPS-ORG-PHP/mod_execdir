@@ -19,7 +19,7 @@ execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하�
 
 2005년 5월 PHPBB의 <u>highlight syntax security hole</u> 때문에 만들어 졌으며, 대형 비지니스 사이트와 안녕 리눅스 배포본에 적용이 되어 15년 이상 검증이 되었습니다.
 
-이 기능은 source patch 또는 php extension 으로 제공이 되며, 이 기능은 다음의 PHP 함수에 영향을 미칩니다:
+이 기능은 소스 코드에 직접 patch를 하거나, 또는 php dynamic extension으로 사용할 수 있으며, 이 기능은 다음의 PHP 함수에 영향을 미칩니다:
 
   * exec
   * system
@@ -34,10 +34,14 @@ execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하�
 
 ### 1. Requirement
 
-PHP 5 이상에서 사용이 가능합니다. 실제 테스트는 PHP 5.5 이 후 버전에서만 테스트 되었습니다.
+PHP 5 이상에서 사용이 가능합니다.
+
+소스 patch의 경우 php 4.3 부터 지원을 하며, PHP 5.3 까지는 safe_mode_exec_dir ini 옵션을 이용 합니다. 5.4 부터는 exec_dir ini 옵션을 이용 하십시오.
+
+PHP 확장 모듈의 경우, PHP 5 호환 코드로 작성 하였지만, 실제 테스트는 PHP 5.5 이 후 버전에서만 테스트 되었습니다.
 
 
-### 2. PHP source patch
+### 2. PHP source 에 직접 patch를 하는 경우
 
 mod_execdir/patches 디렉토리에서 빌드할 PHP 버전에 맞는 patch 파일을 다운도르 합니다. 현재 빌드하려는 버전이 없을 경우에는 가장 최신의 버전을 다운로드 받으십시오. 이 의미는 이전 버전 패치가 문제가 없거나 또는 아직 지원을 하지 않을 수도 있음을 의미 합니다. 여기서는 PHP 7.0.7을 예로 듭니다.
 
@@ -49,7 +53,7 @@ mod_execdir/patches 디렉토리에서 빌드할 PHP 버전에 맞는 patch 파�
 [root@host php-7.0.7]$ make && make install
 
 
-### 3. mod_execdir extension
+### 3. 동적 확장으로 사용할 경우
 
 ```shell
 [root@host mod_execdir]$ phpize
