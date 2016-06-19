@@ -37,6 +37,10 @@
 
 char * get_jailed_shell_cmd (char *);
 
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
+static HashTable execdir_submodules;
+#endif
+
 // If you declare any globals in php_exdcdir.h uncomment this:
 ZEND_DECLARE_MODULE_GLOBALS (execdir)
 
@@ -51,12 +55,19 @@ char * execdir_list[] = {
 	"pcntl_exec",
 	"shell_exec",
 	"popen",
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
 	"proc_open",
+	"proc_close",
+	"proc_terminate",
+	"proc_get_status",
+#endif
 };
 /* }}} */
 
 /* {{{ execdir_functions[]
  */
+
+/* {{{ php_exec.c */
 ZEND_BEGIN_ARG_INFO_EX (arginfo_exec_re, 0, 0, 1)
     ZEND_ARG_INFO(0, command)
     ZEND_ARG_INFO(1, output) /* ARRAY_INFO(1, output, 1) */
@@ -72,14 +83,48 @@ ZEND_BEGIN_ARG_INFO_EX (arginfo_passthru_re, 0, 0, 1)
     ZEND_ARG_INFO(0, command)
     ZEND_ARG_INFO(1, return_value)
 ZEND_END_ARG_INFO()
+/* }}} */
+
+/* {{{ proc_open.c */
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
+ZEND_BEGIN_ARG_INFO_EX(arginfo_proc_terminate, 0, 0, 1)
+	ZEND_ARG_INFO(0, process)
+	ZEND_ARG_INFO(0, signal)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_proc_close, 0)
+	ZEND_ARG_INFO(0, process)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO(arginfo_proc_get_status, 0)
+	ZEND_ARG_INFO(0, process)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_proc_open, 0, 0, 3)
+	ZEND_ARG_INFO(0, command)
+	ZEND_ARG_INFO(0, descriptorspec) /* ARRAY_INFO(0, descriptorspec, 1) */
+	ZEND_ARG_INFO(1, pipes) /* ARRAY_INFO(1, pipes, 1) */
+	ZEND_ARG_INFO(0, cwd)
+	ZEND_ARG_INFO(0, env) /* ARRAY_INFO(0, env, 1) */
+	ZEND_ARG_INFO(0, other_options) /* ARRAY_INFO(0, other_options, 1) */
+ZEND_END_ARG_INFO()
+#endif
+/* }}} */
 
 const zend_function_entry execdir_functions[] = {
-	PHP_FE (exec_re, arginfo_exec_re)
-	PHP_FE (system_re, arginfo_system_re)
-	PHP_FE (passthru_re, arginfo_passthru_re)
-	PHP_FE (shell_exec_re, NULL)
-	PHP_FE (popen_re, NULL)
-	PHP_FE (jailed_shellcmd, NULL)
+	PHP_FE (exec_re,            arginfo_exec_re)
+	PHP_FE (system_re,          arginfo_system_re)
+	PHP_FE (passthru_re,        arginfo_passthru_re)
+	PHP_FE (shell_exec_re,      NULL)
+	PHP_FE (popen_re,           NULL)
+	PHP_FE (jailed_shellcmd,    NULL)
+
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
+	PHP_FE (proc_open_re,       arginfo_proc_open)
+	PHP_FE (proc_close_re,      arginfo_proc_close)
+	PHP_FE (proc_terminate_re,  arginfo_proc_terminate)
+	PHP_FE (proc_get_status_re, arginfo_proc_get_status)
+#endif
 	{NULL, NULL, NULL}
 };
 /* }}} */
@@ -87,11 +132,18 @@ const zend_function_entry execdir_functions[] = {
 /* {{{ execdir_hook_functions[]
  */
 const zend_function_entry execdir_hook_functions[] = {
-	PHP_FALIAS (exec, exec_re, arginfo_exec_re)
-	PHP_FALIAS (system, system_re, arginfo_system_re)
-	PHP_FALIAS (passthru, passthru_re, arginfo_passthru_re)
-	PHP_FALIAS (shell_exec, shell_exec_re, NULL)
-	PHP_FALIAS (popen, popen_re, NULL)
+	PHP_FALIAS (exec,            exec_re,            arginfo_exec_re)
+	PHP_FALIAS (system,          system_re,          arginfo_system_re)
+	PHP_FALIAS (passthru,        passthru_re,        arginfo_passthru_re)
+	PHP_FALIAS (shell_exec,      shell_exec_re,      NULL)
+	PHP_FALIAS (popen,           popen_re,           NULL)
+
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
+	PHP_FALIAS (proc_open,       proc_open_re,       arginfo_proc_open)
+	PHP_FALIAS (proc_close,      proc_close_re,      arginfo_proc_close)
+	PHP_FALIAS (proc_terminate,  proc_terminate_re,  arginfo_proc_terminate)
+	PHP_FALIAS (proc_get_status, proc_get_status_re, arginfo_proc_get_status)
+#endif
 	{NULL, NULL, NULL}
 };
 /* }}} */
@@ -293,9 +345,17 @@ PHP_MINIT_FUNCTION (execdir)
 		);
 	}
 
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
+	zend_hash_init(&execdir_submodules, 0, NULL, NULL, 1);
+
+	if ( PHP_MINIT(proc_open_re)(INIT_FUNC_ARGS_PASSTHRU) == SUCCESS) {
+		zend_hash_str_add_empty_element(&execdir_submodules, "proc_open_re", strlen("proc_open_re"));
+	}
+#endif
+
 	// On cli mode, jailed_shell_cmd does nothing to do.
 	//if ( strcmp (sapi_module.name, "cli") != 0 )
-		safe_hook_execdir ();
+	safe_hook_execdir ();
 }
 /* }}} */
 
@@ -304,6 +364,7 @@ PHP_MINIT_FUNCTION (execdir)
 PHP_MSHUTDOWN_FUNCTION (execdir)
 {
 	UNREGISTER_INI_ENTRIES();
+	zend_hash_destroy(&execdir_submodules);
 	return SUCCESS;
 }
 /* }}} */
@@ -371,10 +432,11 @@ PHP_FUNCTION (shell_exec_re)
 	FILE        * in;
 	size_t        total_readbytes;
 	char        * command, * jcommand;
-	size_t        command_len;
 #if PHP_VERSION_ID < 60000
+	int           command_len;
 	char        * ret;
 #else
+	size_t        command_len;
 	zend_string * ret;
 #endif
 	php_stream  * stream;
@@ -432,7 +494,11 @@ PHP_FUNCTION (shell_exec_re)
 PHP_FUNCTION (popen_re)
 {
 	char       * command, * mode, * jcommand;
+#if PHP_VERSION_ID < 60000
+	int          command_len, mode_len;
+#else
 	size_t       command_len, mode_len;
+#endif
 	FILE       * fp;
 	php_stream * stream;
 	char       * posix_mode;
@@ -480,14 +546,6 @@ PHP_FUNCTION (popen_re)
 	}
 
 	efree (posix_mode);
-}
-/* }}} */
-
-/* {{{ PHP_FUNCTION (resource) proc_open_re (string cmd , array descriptorspec , array &pipes [, string cwd [, array env [, array other_options]]])
- */
-PHP_FUNCTION (proc_open_re)
-{
-	RETURN_EXECDIR_STRING ("proc_open", 1);
 }
 /* }}} */
 

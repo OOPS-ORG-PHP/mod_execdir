@@ -68,6 +68,7 @@ And execute configure with ***--with-exec-dir*** option.
 ```shell
 [root@host mod_execdir]$ phpize
 [root@host mod_execdir]$ ./configure --with-execdir=/var/lib/php/bin
+[root@host mod_execdir]$ make test PHP_EXECUTABLE=/usr/bin/php
 [root@host mod_execdir]$ make install
 ```
 
@@ -163,6 +164,10 @@ The list of original functions is follow:
   * passthru_orig
   * shell_exec_orig
   * popen_orig
+  * proc_open_orig
+  * proc_close_orig
+  * proc_terminate_orig
+  * proc_get_status_orig
 
 ### 2. mod_execdir APIs
 
@@ -171,6 +176,11 @@ The list of original functions is follow:
   * ***passthru_re*** : mapping ***passthru*** function
   * ***shell_exec_re*** : mapping ***shell_exec*** function
   * ***popen_re*** : mapping ***popen*** function
+  * ***popen_re*** : mapping ***popen*** function
+  * ***proc_open_re*** : mapping ***proc_open*** function
+  * ***proc_close_re*** : mapping ***proc_close*** function
+  * ***proc_terminate_re*** :  mapping ***proc_terminate*** function
+  * ***proc_get_status_re*** : mapping ***proc_get_status*** function
   * ***jailed_shellcmd*** : return jailed shell command strings
   ```
   Prototype: (string) jailed_shellcmd (string path)

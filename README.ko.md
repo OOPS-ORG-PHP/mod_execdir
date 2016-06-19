@@ -46,7 +46,7 @@ PHP 확장 모듈의 경우, PHP 5 호환 코드로 작성 하였지만, 실제 
     * ***pcntl_open*** fucntion 적용
   2. mod_execdir 확장 사용
     * 원 함수를 hooking 및 alias를 하기 때문에 소스 패치보다는 성능이 미세하게 떨어짐.
-    * ***pcntl_open***은 별도의 pcntl_jailed 확장을 사용해야 함
+    * ***pcntl_open***은 별도의 mod_jailed_pcntl 확장을 사용해야 함
 
 
 
@@ -67,6 +67,7 @@ mod_execdir/patches 디렉토리에서 빌드할 PHP 버전에 맞는 patch 파�
 ```shell
 [root@host mod_execdir]$ phpize
 [root@host mod_execdir]$ ./configure --with-execdir=/var/lib/php/bin
+[root@host mod_execdir]$ make test PHP_EXECUTABLE=/usr/bin/php
 [root@host mod_execdir]$ make install
 ```
 
@@ -161,6 +162,10 @@ var_dump ($o);
   * passthru_orig
   * shell_exec_orig
   * popen_orig
+  * proc_open_orig
+  * proc_close_orig
+  * proc_terminate_orig
+  * proc_get_status_orig
 
 ### 2. mod_execdir APIs
 
@@ -169,6 +174,10 @@ var_dump ($o);
   * ***passthru_re*** : mapping ***passthru*** function
   * ***shell_exec_re*** : mapping ***shell_exec*** function
   * ***popen_re*** : mapping ***popen*** function
+  * ***proc_open_re*** : mapping ***proc_open*** function
+  * ***proc_close_re*** : mapping ***proc_close*** function
+  * ***proc_terminate_re*** :  mapping ***proc_terminate*** function
+  * ***proc_get_status_re*** : mapping ***proc_get_status*** function
   * ***jailed_shellcmd*** : return jailed shell command strings
   ```
   Prototype: (string) jailed_shellcmd (string path)
