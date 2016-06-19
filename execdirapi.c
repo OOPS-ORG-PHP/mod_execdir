@@ -47,8 +47,17 @@ PHPAPI char * get_jailed_shell_cmd (char * cmd) {
 	char   * exec_dir;
 	char   * _cmd;
 
+#if PHP_VERSION_ID < 50400
+	if ( EXECDIR_G (exec_dir) )
+		exec_dir = EXECDIR_G (exec_dir);
+	else if ( PG (safe_mode_exec_dir) )
+		exec_dir = PG (safe_mode_exec_dir);
+	else
+		exec_dir = "";
+#else
 	//exec_dir = PG(exec_dir);
 	exec_dir = EXECDIR_G (exec_dir);
+#endif
 	exec_len = strlen (exec_dir);
 
 	if ( exec_len ) {

@@ -189,12 +189,11 @@ void php_execdir_init_globals (zend_execdir_globals * execdir_globals) {
 /*{{{ +-- static int safe_hook_execdir (void)
  */
 static int safe_hook_execdir (void) {
-	TSRMLS_FETCH();
-
 	int    entno = sizeof (execdir_list) / sizeof (char *);
 	int    i, funclen;
 	char * func;
 	zend_function * zf;
+	TSRMLS_FETCH();
 
 	for ( i=0; i<entno; i++ ) {
 		func = execdir_list[i];
@@ -507,7 +506,11 @@ PHP_FUNCTION (popen_re)
 	php_stream * stream;
 	char       * posix_mode;
 
+#if PHP_VERSION_ID < 50400
+	if ( zend_parse_parameters (ZEND_NUM_ARGS() TSRMLS_CC, "ss", &command, &command_len, &mode, &mode_len) == FAILURE ) {
+#else
 	if ( zend_parse_parameters (ZEND_NUM_ARGS() TSRMLS_CC, "ps", &command, &command_len, &mode, &mode_len) == FAILURE ) {
+#endif
 		return;
 	}
 
@@ -530,6 +533,56 @@ PHP_FUNCTION (popen_re)
 	}
 #endif
 
+#if PHP_VERSION_ID < 50400
+	{
+		char *b, *buf = 0, *tmp;
+
+		if (PG(safe_mode)){
+			b = strchr(command, ' ');
+			if (!b) {
+				b = strrchr(command, '/');
+			} else {
+				char *c;
+
+				c = command;
+				while((*b != '/') && (b != c)) {
+					b--;
+				}
+				if (b == c) {
+					b = NULL;
+				}
+			}
+
+			if (b) {
+				spprintf(&buf, 0, "%s%s", PG(safe_mode_exec_dir), b);
+			} else {
+				spprintf(&buf, 0, "%s/%s", PG(safe_mode_exec_dir), command);
+			}
+
+			tmp = php_escape_shell_cmd(buf);
+			fp = VCWD_POPEN(tmp, posix_mode);
+			efree(tmp);
+
+			if (!fp) {
+				php_error_docref2(NULL TSRMLS_CC, buf, posix_mode, E_WARNING, "%s", strerror(errno));
+				efree(posix_mode);
+				efree(buf);
+				RETURN_FALSE;
+			}
+
+			efree(buf);
+
+		} else {
+			jcommand = get_jailed_shell_cmd (command);
+			fp = VCWD_POPEN(jcommand, posix_mode);
+			if (!fp) {
+				php_error_docref2(NULL TSRMLS_CC, command, posix_mode, E_WARNING, "%s", strerror(errno));
+				efree(posix_mode);
+				RETURN_FALSE;
+			}
+		}
+	}
+#else
 	jcommand = get_jailed_shell_cmd (command);
 	fp = VCWD_POPEN (jcommand, posix_mode);
 	efree (jcommand);
@@ -539,6 +592,7 @@ PHP_FUNCTION (popen_re)
 		efree(posix_mode);
 		RETURN_FALSE;
 	}
+#endif
 
 	stream = php_stream_fopen_from_pipe(fp, mode);
 

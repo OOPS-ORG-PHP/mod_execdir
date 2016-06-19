@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2013 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -14,8 +14,8 @@
    +----------------------------------------------------------------------+
    | Author: Wez Furlong <wez@thebrainroom.com>                           |
    | Jailed: JoungKyun.Kim <http://oops.org>                              |
-   |         This source is PHP-5.6 branch (2016-06-19)                   |
-   |         d1ab974f0bfb202d9a49a6cc152293b4d013ef46                     |
+   |         This source is PHP-5.3 branch (2016-06-19)                   |
+   |         a2045ff3320a7d037f198558c934b885f67fc00e                     |
    +----------------------------------------------------------------------+
  */
 /* $Id$ */
@@ -33,18 +33,18 @@
 
 #include "php.h"
 
-#if PHP_VERSION_ID < 60000 && PHP_VERSION_ID >= 50400
+#if PHP_VERSION_ID < 50400
 
 #include <stdio.h>
 #include <ctype.h>
 #include "ext/standard/php_string.h"
+#include "safe_mode.h"
 #include "ext/standard/head.h"
 #include "ext/standard/basic_functions.h"
 #include "ext/standard/file.h"
 #include "ext/standard/exec.h"
 #include "php_globals.h"
 #include "SAPI.h"
-#include "main/php_network.h"
 
 #ifdef NETWARE
 #include <proc.h>
@@ -85,6 +85,26 @@ char * get_jailed_shell_cmd (char *);
 #include "ext/standard/proc_open.h"
 
 static int le_proc_open;
+
+#if PHP_VERSION_ID < 50200
+/* {{{ zend_memrchr */
+static inline void *zend_memrchr(const void *s, int c, size_t n) {
+    register unsigned char *e;
+
+    if (n <= 0) {
+        return NULL;
+    }
+
+    for (e = (unsigned char *)s + n - 1; e >= (unsigned char *)s; e--) {
+        if (*e == (unsigned char)c) {
+            return (void *)e;
+        }
+    }
+
+    return NULL;
+}
+/* }}} */
+#endif
 
 /* {{{ _php_array_to_envp */
 static php_process_env_t _php_array_to_envp(zval *environment, int is_persistent TSRMLS_DC)
@@ -127,17 +147,8 @@ static php_process_env_t _php_array_to_envp(zval *environment, int is_persistent
 			zend_hash_get_current_data_ex(target_hash, (void **) &element, &pos) == SUCCESS;
 			zend_hash_move_forward_ex(target_hash, &pos)) {
 
-		if (Z_TYPE_PP(element) != IS_STRING) {
-			zval tmp;
-
-			MAKE_COPY_ZVAL(element, &tmp);
-			convert_to_string(&tmp);
-			el_len = Z_STRLEN(tmp);
-
-			zval_dtor(&tmp);
-		} else {
-			el_len = Z_STRLEN_PP(element);
-		}
+		convert_to_string_ex(element);
+		el_len = Z_STRLEN_PP(element);
 		if (el_len == 0) {
 			continue;
 		}
@@ -149,7 +160,7 @@ static php_process_env_t _php_array_to_envp(zval *environment, int is_persistent
 				if (string_length == 0) {
 					continue;
 				}
-				sizeenv += string_length;
+				sizeenv += string_length+1;
 				break;
 		}
 	}
@@ -162,26 +173,46 @@ static php_process_env_t _php_array_to_envp(zval *environment, int is_persistent
 	for (zend_hash_internal_pointer_reset_ex(target_hash, &pos);
 			zend_hash_get_current_data_ex(target_hash, (void **) &element, &pos) == SUCCESS;
 			zend_hash_move_forward_ex(target_hash, &pos)) {
-		zval tmp;
 
-		if (Z_TYPE_PP(element) != IS_STRING) {
-			MAKE_COPY_ZVAL(element, &tmp);
-			convert_to_string(&tmp);
-		} else {
-			tmp = **element;
-		}
-
-		el_len = Z_STRLEN(tmp);
+		convert_to_string_ex(element);
+		el_len = Z_STRLEN_PP(element);
 
 		if (el_len == 0) {
-			goto next_element;
+			continue;
 		}
 
-		data = Z_STRVAL(tmp);
+		data = Z_STRVAL_PP(element);
 		switch (zend_hash_get_current_key_ex(target_hash, &string_key, &string_length, &num_key, 0, &pos)) {
 			case HASH_KEY_IS_STRING:
 				if (string_length == 0) {
-					goto next_element;
+					continue;
+				}
+				if (PG(safe_mode)) {
+					/* Check the protected list */
+					if (zend_hash_exists(&BG(sm_protected_env_vars), string_key, string_length - 1)) {
+						php_error_docref(NULL TSRMLS_CC, E_WARNING, "Safe Mode warning: Cannot override protected environment variable '%s'", string_key);
+						return env;
+					}
+					/* Check the allowed list */
+					if (BG(sm_allowed_env_vars) && *BG(sm_allowed_env_vars)) {
+						char *allowed_env_vars = estrdup(BG(sm_allowed_env_vars));
+						char *strtok_buf = NULL;
+						char *allowed_prefix = php_strtok_r(allowed_env_vars, ", ", &strtok_buf);
+						zend_bool allowed = 0;
+
+						while (allowed_prefix) {
+							if (!strncmp(allowed_prefix, string_key, strlen(allowed_prefix))) {
+								allowed = 1;
+								break;
+							}
+							allowed_prefix = php_strtok_r(NULL, ", ", &strtok_buf);
+						}
+						efree(allowed_env_vars);
+						if (!allowed) {
+							php_error_docref(NULL TSRMLS_CC, E_WARNING, "Safe Mode warning: Cannot set environment variable '%s' - it's not in the allowed list", string_key);
+							return env;
+						}
+					}
 				}
 
 				l = string_length + el_len + 1;
@@ -203,17 +234,8 @@ static php_process_env_t _php_array_to_envp(zval *environment, int is_persistent
 #endif
 				p += el_len + 1;
 				break;
-#if PHP_VERSION_ID < 50500
 			case HASH_KEY_NON_EXISTANT:
-#else
-			case HASH_KEY_NON_EXISTENT:
-#endif
 				break;
-		}
-
-next_element:
-		if (Z_TYPE_PP(element) != IS_STRING) {
-			zval_dtor(&tmp);
 		}
 	}
 
@@ -248,9 +270,6 @@ static void proc_open_rsrc_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 	DWORD wstatus;
 #elif HAVE_SYS_WAIT_H
 	int wstatus;
-#if PHP_VERSION_ID >= 50500
-	int waitpid_options = 0;
-#endif
 	pid_t wait_pid;
 #endif
 
@@ -263,45 +282,18 @@ static void proc_open_rsrc_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 	}
 
 #ifdef PHP_WIN32
-#if PHP_VERSION_ID < 50500
 	WaitForSingleObject(proc->childHandle, INFINITE);
-#else
-	if (FG(pclose_wait)) {
-		WaitForSingleObject(proc->childHandle, INFINITE);
-	}
-#endif
 	GetExitCodeProcess(proc->childHandle, &wstatus);
-#if PHP_VERSION_ID < 50500
 	FG(pclose_ret) = wstatus;
-#else
-	if (wstatus == STILL_ACTIVE) {
-		FG(pclose_ret) = -1;
-	} else {
-		FG(pclose_ret) = wstatus;
-	}
-#endif
 	CloseHandle(proc->childHandle);
 
 #elif HAVE_SYS_WAIT_H
 
-#if PHP_VERSION_ID >= 50500
-	if (!FG(pclose_wait)) {
-		waitpid_options = WNOHANG;
-	}
-#endif
 	do {
-#if PHP_VERSION_ID < 50500
 		wait_pid = waitpid(proc->child, &wstatus, 0);
-#else
-		wait_pid = waitpid(proc->child, &wstatus, waitpid_options);
-#endif
 	} while (wait_pid == -1 && errno == EINTR);
 
-#if PHP_VERSION_ID < 50500
 	if (wait_pid == -1) {
-#else
-	if (wait_pid <= 0) {
-#endif
 		FG(pclose_ret) = -1;
 	} else {
 		if (WIFEXITED(wstatus))
@@ -315,7 +307,57 @@ static void proc_open_rsrc_dtor(zend_rsrc_list_entry *rsrc TSRMLS_DC)
 	_php_free_envp(proc->env, proc->is_persistent);
 	pefree(proc->command, proc->is_persistent);
 	pefree(proc, proc->is_persistent);
+}
+/* }}} */
 
+/* {{{ php_make_safe_mode_command */
+static int php_make_safe_mode_command(char *cmd, char **safecmd, int is_persistent TSRMLS_DC)
+{
+	int lcmd, larg0;
+	char *space, *sep, *arg0;
+
+	if (!PG(safe_mode)) {
+#ifdef HAVE_EXECDIR
+		*safecmd = get_jailed_shell_cmd (cmd);
+#else
+		*safecmd = pestrdup(cmd, is_persistent);
+#endif
+		return SUCCESS;
+	}
+
+	lcmd = strlen(cmd);
+
+	arg0 = estrndup(cmd, lcmd);
+
+	space = memchr(arg0, ' ', lcmd);
+	if (space) {
+		*space = '\0';
+		larg0 = space - arg0;
+	} else {
+		larg0 = lcmd;
+	}
+
+	if (php_memnstr(arg0, "..", sizeof("..")-1, arg0 + larg0)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "No '..' components allowed in path");
+		efree(arg0);
+		return FAILURE;
+	}
+
+	sep = zend_memrchr(arg0, PHP_DIR_SEPARATOR, larg0);
+
+	spprintf(safecmd, 0, "%s%s%s%s", PG(safe_mode_exec_dir), (sep ? sep : "/"), (sep ? "" : arg0), (space ? cmd + larg0 : ""));
+
+	efree(arg0);
+	arg0 = php_escape_shell_cmd(*safecmd);
+	efree(*safecmd);
+	if (is_persistent) {
+		*safecmd = pestrdup(arg0, 1);
+		efree(arg0);
+	} else {
+		*safecmd = arg0;
+	}
+
+	return SUCCESS;
 }
 /* }}} */
 
@@ -370,13 +412,7 @@ PHP_FUNCTION(proc_close_re)
 
 	ZEND_FETCH_RESOURCE(proc, struct php_process_handle *, &zproc, -1, "process", le_proc_open);
 
-#if PHP_VERSION_ID >= 50500
-	FG(pclose_wait) = 1;
-#endif
 	zend_list_delete(Z_LVAL_P(zproc));
-#if PHP_VERSION_ID >= 50500
-	FG(pclose_wait) = 0;
-#endif
 	RETURN_LONG(FG(pclose_ret));
 }
 /* }}} */
@@ -514,7 +550,6 @@ PHP_FUNCTION(proc_open_re)
 	DWORD dwCreateFlags = 0;
 	char *command_with_cmd;
 	UINT old_error_mode;
-	char cur_cwd[MAXPATHLEN];
 #endif
 #ifdef NETWARE
 	char** child_argv = NULL;
@@ -541,20 +576,16 @@ PHP_FUNCTION(proc_open_re)
 		RETURN_FALSE;
 	}
 
-#ifdef HAVE_EXECDIR
+#if HAVE_EXECDIR
 	if (strlen(command) != command_len) {
-		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
 		RETURN_FALSE;
 	}
-
-	{
-		char * jcommand = get_jailed_shell_cmd (command);
-		command = pestrdup(jcommand, is_persistent);
-		efree (jcommand);
-	}
-#else
-	command = pestrdup(command, is_persistent);
 #endif
+
+	if (FAILURE == php_make_safe_mode_command(command, &command, is_persistent TSRMLS_CC)) {
+		RETURN_FALSE;
+	}
 
 #ifdef PHP_WIN32
 	if (other_options) {
@@ -612,7 +643,7 @@ PHP_FUNCTION(proc_open_re)
 		if (Z_TYPE_PP(descitem) == IS_RESOURCE) {
 			/* should be a stream - try and dup the descriptor */
 			php_stream *stream;
-			php_socket_t fd;
+			int fd;
 
 			php_stream_from_zval(stream, descitem);
 
@@ -685,7 +716,7 @@ PHP_FUNCTION(proc_open_re)
 
 			} else if (strcmp(Z_STRVAL_PP(ztype), "file") == 0) {
 				zval **zfile, **zmode;
-				php_socket_t fd;
+				int fd;
 				php_stream *stream;
 
 				descriptors[ndesc].mode = DESC_FILE;
@@ -706,7 +737,7 @@ PHP_FUNCTION(proc_open_re)
 
 				/* try a wrapper */
 				stream = php_stream_open_wrapper(Z_STRVAL_PP(zfile), Z_STRVAL_PP(zmode),
-						REPORT_ERRORS|STREAM_WILL_CAST, NULL);
+						ENFORCE_SAFE_MODE|REPORT_ERRORS|STREAM_WILL_CAST, NULL);
 
 				/* force into an fd */
 				if (stream == NULL || FAILURE == php_stream_cast(stream,
@@ -766,13 +797,13 @@ PHP_FUNCTION(proc_open_re)
 
 #ifdef PHP_WIN32
 	if (cwd == NULL) {
+		char cur_cwd[MAXPATHLEN];
 		char *getcwd_result;
 		getcwd_result = VCWD_GETCWD(cur_cwd, MAXPATHLEN);
 		if (!getcwd_result) {
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot get current directory");
 			goto exit_fail;
 		}
-		cwd = cur_cwd;
 	}
 
 	memset(&si, 0, sizeof(si));
@@ -932,7 +963,7 @@ PHP_FUNCTION(proc_open_re)
 #endif
 
 		if (cwd) {
-			php_ignore_value(chdir(cwd));
+			chdir(cwd);
 		}
 
 		if (env.envarray) {
@@ -1061,7 +1092,7 @@ exit_fail:
 /* }}} */
 
 #endif /* PHP_CAN_SUPPORT_PROC_OPEN */
-#endif /* PHP_VERSION_ID < 60000 */
+#endif /* PHP_VERSION_ID < 50400 */
 
 /*
  * Local variables:

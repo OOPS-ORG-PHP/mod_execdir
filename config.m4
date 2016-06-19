@@ -20,5 +20,5 @@ if test "$PHP_EXECDIR" != "no"; then
 		AC_MSG_RESULT([/var/lib/php/bin])
 	fi
 
-	PHP_NEW_EXTENSION(execdir, php_execdir.c execdirapi.c proc_open.c proc_open5.c, $ext_shared)
+	PHP_NEW_EXTENSION(execdir, php_execdir.c execdirapi.c proc_open.c proc_open5.c proc_open53.c, $ext_shared)
 fi

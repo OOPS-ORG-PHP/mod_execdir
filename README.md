@@ -34,7 +34,7 @@ This feature is provided as the source patch or php dynamic extension, and affec
 
 ### 1. Requirement
 
-Over PHP 5 and PHP 7. But, it is tested on PHP 5.5 and after.
+Over PHP 5 and PHP 7. But, it is tested on PHP 5.1 and after.
 
 For this features, we support 2 building method.
 
