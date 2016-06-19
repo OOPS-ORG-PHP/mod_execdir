@@ -253,7 +253,11 @@ static int safe_hook_execdir (void) {
  */
 static void php_exec_ex (INTERNAL_FUNCTION_PARAMETERS, int mode) {
 	char   * cmd, * jcmd;
+#if PHP_VERSION_ID < 60000
+	int      cmd_len;
+#else
 	size_t   cmd_len;
+#endif
 	zval   * ret_code = NULL, * ret_array = NULL;
 	int      ret;
 
