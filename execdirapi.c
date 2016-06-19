@@ -229,8 +229,8 @@ static char * php_jailed_shell_cmd (char * cmd, char * path) {
 	else
 		b = 0;
 
-	_path= emalloc (sizeof (char *) * (cmd_len + 2));
-	memset (_path, 0, sizeof (char *) * (cmd_len + 2));
+	_path= emalloc (sizeof (char) * (cmd_len + 2));
+	memset (_path, 0, sizeof (char) * (cmd_len + 2));
 	sprintf (_path, "%s%s", _tpath, !b ? "" : "/");
 	path_len = strlen (_path);
 	efree (_tpath);
