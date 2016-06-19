@@ -160,7 +160,7 @@ zend_module_entry execdir_module_entry = {
 	PHP_MSHUTDOWN (execdir),
 	PHP_RINIT (execdir),
 	PHP_RSHUTDOWN (execdir),
-	PHP_MINFO(execdir),
+	PHP_MINFO (execdir),
 #if ZEND_MODULE_API_NO >= 20010901
 	EXECDIR_EXT_VERSION, /* Replace with version number for your extension */
 #endif
@@ -170,9 +170,9 @@ zend_module_entry execdir_module_entry = {
 
 /* {{{ ini_entries[]
  */
-PHP_INI_BEGIN()
+PHP_INI_BEGIN ()
 	STD_PHP_INI_ENTRY ("exec_dir", PHP_EXECDIR, ZEND_INI_SYSTEM, OnUpdateString, exec_dir, zend_execdir_globals, execdir_globals)
-PHP_INI_END()
+PHP_INI_END ()
 /* }}} */
 
 #ifdef COMPILE_DL_EXECDIR
@@ -193,7 +193,7 @@ static int safe_hook_execdir (void) {
 	int    i, funclen;
 	char * func;
 	zend_function * zf;
-	TSRMLS_FETCH();
+	TSRMLS_FETCH ();
 
 	for ( i=0; i<entno; i++ ) {
 		func = execdir_list[i];
@@ -243,12 +243,12 @@ static int safe_hook_execdir (void) {
 #endif
 	}
 
-	zend_register_functions(NULL, execdir_hook_functions, NULL, MODULE_PERSISTENT TSRMLS_CC);
+	zend_register_functions (NULL, execdir_hook_functions, NULL, MODULE_PERSISTENT TSRMLS_CC);
 	return 0;
 }
 /* }}} */
 
-/* {{{ +-- static void php_exec_ex(INTERNAL_FUNCTION_PARAMETERS, int mode)
+/* {{{ +-- static void php_exec_ex (INTERNAL_FUNCTION_PARAMETERS, int mode)
  */
 static void php_exec_ex (INTERNAL_FUNCTION_PARAMETERS, int mode) {
 	char   * cmd, * jcmd;
@@ -349,10 +349,10 @@ PHP_MINIT_FUNCTION (execdir)
 	}
 
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
-	zend_hash_init(&execdir_submodules, 0, NULL, NULL, 1);
+	zend_hash_init (&execdir_submodules, 0, NULL, NULL, 1);
 
 	if ( PHP_MINIT(proc_open_re)(INIT_FUNC_ARGS_PASSTHRU) == SUCCESS) {
-		zend_hash_str_add_empty_element(&execdir_submodules, "proc_open_re", strlen("proc_open_re"));
+		zend_hash_str_add_empty_element (&execdir_submodules, "proc_open_re", strlen ("proc_open_re"));
 	}
 #endif
 
@@ -366,15 +366,15 @@ PHP_MINIT_FUNCTION (execdir)
  */
 PHP_MSHUTDOWN_FUNCTION (execdir)
 {
-	UNREGISTER_INI_ENTRIES();
-	zend_hash_destroy(&execdir_submodules);
+	UNREGISTER_INI_ENTRIES ();
+	zend_hash_destroy (&execdir_submodules);
 	return SUCCESS;
 }
 /* }}} */
 
 /* {{{ PHP_RINIT_FUNCTION
  */
-PHP_RINIT_FUNCTION(execdir)
+PHP_RINIT_FUNCTION (execdir)
 {
 	return SUCCESS;
 }
@@ -382,7 +382,7 @@ PHP_RINIT_FUNCTION(execdir)
 
 /* {{{ PHP_RSHUTDOWN_FUNCTION
  */
-PHP_RSHUTDOWN_FUNCTION(execdir)
+PHP_RSHUTDOWN_FUNCTION (execdir)
 {
 	return SUCCESS;
 }
@@ -414,7 +414,7 @@ PHP_FUNCTION (exec_re)
  */
 PHP_FUNCTION (system_re)
 {
-	php_exec_ex(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1);
+	php_exec_ex (INTERNAL_FUNCTION_PARAM_PASSTHRU, 1);
 }
 /* }}} */
 
@@ -422,7 +422,7 @@ PHP_FUNCTION (system_re)
  */
 PHP_FUNCTION (passthru_re)
 {
-	php_exec_ex(INTERNAL_FUNCTION_PARAM_PASSTHRU, 3);
+	php_exec_ex (INTERNAL_FUNCTION_PARAM_PASSTHRU, 3);
 }
 /* }}} */
 
@@ -484,7 +484,7 @@ PHP_FUNCTION (shell_exec_re)
 	}
 #else
 	if ( ret && ZSTR_LEN (ret) > 0 ) {
-		RETVAL_STR(ret);
+		RETVAL_STR (ret);
 	}
 #endif
 }
@@ -507,9 +507,9 @@ PHP_FUNCTION (popen_re)
 	char       * posix_mode;
 
 #if PHP_VERSION_ID < 50400
-	if ( zend_parse_parameters (ZEND_NUM_ARGS() TSRMLS_CC, "ss", &command, &command_len, &mode, &mode_len) == FAILURE ) {
+	if ( zend_parse_parameters (ZEND_NUM_ARGS () TSRMLS_CC, "ss", &command, &command_len, &mode, &mode_len) == FAILURE ) {
 #else
-	if ( zend_parse_parameters (ZEND_NUM_ARGS() TSRMLS_CC, "ps", &command, &command_len, &mode, &mode_len) == FAILURE ) {
+	if ( zend_parse_parameters (ZEND_NUM_ARGS () TSRMLS_CC, "ps", &command, &command_len, &mode, &mode_len) == FAILURE ) {
 #endif
 		return;
 	}
@@ -537,15 +537,15 @@ PHP_FUNCTION (popen_re)
 	{
 		char *b, *buf = 0, *tmp;
 
-		if (PG(safe_mode)){
-			b = strchr(command, ' ');
+		if (PG (safe_mode)){
+			b = strchr (command, ' ');
 			if (!b) {
-				b = strrchr(command, '/');
+				b = strrchr (command, '/');
 			} else {
 				char *c;
 
 				c = command;
-				while((*b != '/') && (b != c)) {
+				while ((*b != '/') && (b != c)) {
 					b--;
 				}
 				if (b == c) {
@@ -554,30 +554,30 @@ PHP_FUNCTION (popen_re)
 			}
 
 			if (b) {
-				spprintf(&buf, 0, "%s%s", PG(safe_mode_exec_dir), b);
+				spprintf (&buf, 0, "%s%s", PG (safe_mode_exec_dir), b);
 			} else {
-				spprintf(&buf, 0, "%s/%s", PG(safe_mode_exec_dir), command);
+				spprintf (&buf, 0, "%s/%s", PG (safe_mode_exec_dir), command);
 			}
 
-			tmp = php_escape_shell_cmd(buf);
-			fp = VCWD_POPEN(tmp, posix_mode);
-			efree(tmp);
+			tmp = php_escape_shell_cmd (buf);
+			fp = VCWD_POPEN (tmp, posix_mode);
+			efree (tmp);
 
 			if (!fp) {
-				php_error_docref2(NULL TSRMLS_CC, buf, posix_mode, E_WARNING, "%s", strerror(errno));
-				efree(posix_mode);
-				efree(buf);
+				php_error_docref2 (NULL TSRMLS_CC, buf, posix_mode, E_WARNING, "%s", strerror (errno));
+				efree (posix_mode);
+				efree (buf);
 				RETURN_FALSE;
 			}
 
-			efree(buf);
+			efree (buf);
 
 		} else {
 			jcommand = get_jailed_shell_cmd (command);
-			fp = VCWD_POPEN(jcommand, posix_mode);
+			fp = VCWD_POPEN (jcommand, posix_mode);
 			if (!fp) {
-				php_error_docref2(NULL TSRMLS_CC, command, posix_mode, E_WARNING, "%s", strerror(errno));
-				efree(posix_mode);
+				php_error_docref2 (NULL TSRMLS_CC, command, posix_mode, E_WARNING, "%s", strerror (errno));
+				efree (posix_mode);
 				RETURN_FALSE;
 			}
 		}
@@ -588,16 +588,16 @@ PHP_FUNCTION (popen_re)
 	efree (jcommand);
 
 	if ( ! fp ) {
-		php_error_docref2 (NULL TSRMLS_CC, command, posix_mode, E_WARNING, "%s", strerror(errno));
-		efree(posix_mode);
+		php_error_docref2 (NULL TSRMLS_CC, command, posix_mode, E_WARNING, "%s", strerror (errno));
+		efree (posix_mode);
 		RETURN_FALSE;
 	}
 #endif
 
-	stream = php_stream_fopen_from_pipe(fp, mode);
+	stream = php_stream_fopen_from_pipe (fp, mode);
 
 	if ( stream == NULL ) {
-		php_error_docref2 (NULL TSRMLS_CC, command, mode, E_WARNING, "%s", strerror(errno));
+		php_error_docref2 (NULL TSRMLS_CC, command, mode, E_WARNING, "%s", strerror (errno));
 		RETVAL_FALSE;
 	} else {
 		php_stream_to_zval (stream, return_value);
@@ -623,16 +623,16 @@ PHP_FUNCTION (jailed_shellcmd)
 	char        * jcmd;
 	size_t        cmdlen = 0;
 
-	if ( zend_parse_parameters (ZEND_NUM_ARGS() TSRMLS_CC, "s", &cmd, &cmdlen) == FAILURE ) {
+	if ( zend_parse_parameters (ZEND_NUM_ARGS () TSRMLS_CC, "s", &cmd, &cmdlen) == FAILURE ) {
 		return;
 	}
 
 	if ( ! cmdlen )
-		RETURN_EMPTY_STRING();
+		RETURN_EMPTY_STRING ();
 
 	if ( strlen (cmd) != cmdlen ) {
 		php_error_docref (NULL TSRMLS_CC, E_WARNING, "NULL byte detected. Possible attack");
-		RETURN_EMPTY_STRING();
+		RETURN_EMPTY_STRING ();
 	}
 
 	jcmd = get_jailed_shell_cmd (cmd);

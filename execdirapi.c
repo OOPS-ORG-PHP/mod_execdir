@@ -55,7 +55,7 @@ PHPAPI char * get_jailed_shell_cmd (char * cmd) {
 	else
 		exec_dir = "";
 #else
-	//exec_dir = PG(exec_dir);
+	//exec_dir = PG (exec_dir);
 	exec_dir = EXECDIR_G (exec_dir);
 #endif
 	exec_len = strlen (exec_dir);
@@ -228,7 +228,7 @@ static char * php_jailed_shell_cmd (char * cmd, char * path) {
 	efree (x_cmd);
 	efree (debug_cmd);
 
-	cmd_len  = strlen(_cmd);
+	cmd_len  = strlen (_cmd);
 	path_len = strlen (_tpath);
 
 	if ( path_len == 1 )
@@ -238,7 +238,7 @@ static char * php_jailed_shell_cmd (char * cmd, char * path) {
 	else
 		b = 0;
 
-	_path= emalloc (sizeof (char) * (cmd_len + path_len + 4));
+	_path = emalloc (sizeof (char) * (cmd_len + path_len + 4));
 	memset (_path, 0, sizeof (char) * (cmd_len + path_len + 4));
 	sprintf (_path, "%s%s", _tpath, !b ? "" : "/");
 	path_len = strlen (_path);
