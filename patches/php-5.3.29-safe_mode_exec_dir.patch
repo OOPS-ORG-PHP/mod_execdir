@@ -264,8 +264,8 @@ diff -urNp php-5.3.29.org/ext/standard/exec.c php-5.3.29/ext/standard/exec.c
 +	else
 +		b = 0;
 +
-+	_path= emalloc (sizeof (char *) * (cmd_len + 2));
-+	memset (_path, 0, sizeof (char *) * (cmd_len + 2));
++	_path= emalloc (sizeof (char) * (cmd_len + path_len + 4));
++	memset (_path, 0, sizeof (char) * (cmd_len + path_len + 4));
 +	sprintf (_path, "%s%s", _tpath, !b ? "" : "/");
 +	path_len = strlen (_path);
 +	efree (_tpath);
