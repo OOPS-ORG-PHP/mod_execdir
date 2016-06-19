@@ -18,7 +18,7 @@ This program is under PHP License.
 
 execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하여, ***SAFE MODE***가 아니고, 또한 PHP 5.5 이 후 버전에서도 사용할 수 있도록 지원을 합니다.
 
-2005년 5월 PHPBB의 <u>highlight syntax security hole</u> 때문에 만들어 졌으며, 대형 비지니스 사이트와 안녕 리눅스 배포본에 적용이 되어 15년 이상 검증이 되었습니다.
+2005년 5월 PHPBB의 <u>highlight syntax security hole</u> 때문에 만들어 졌으며, 대형 비지니스 사이트와 안녕 리눅스 배포본에 적용이 되어 10년 이상 검증이 되었습니다.
 
 이 기능은 소스 코드에 직접 patch를 하거나, 또는 php dynamic extension으로 사용할 수 있으며, 이 기능은 다음의 PHP 함수에 영향을 미칩니다:
 

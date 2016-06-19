@@ -18,7 +18,7 @@ This feature is an implementation to improve ***safe_mode_exec_dir*** before PHP
 
 The execdir exntesion is to complement the such disadvantages of ***safe_mode_exec_dir***, and support non ***SAFE MODE*** and over PHP 5.5.
 
-This featurhe was made for <u>highlight syntax security hole of PHPBB</u> in May 2005. Also, it has been applied to large business site and AnNyung LInux distribution and verified more than 15 years.
+This featurhe was made for <u>highlight syntax security hole of PHPBB</u> in May 2005. Also, it has been applied to large business site and AnNyung LInux distribution and verified more than 10 years.
 
 This feature is provided as the source patch or php dynamic extension, and affects follow PHP functions:
 
