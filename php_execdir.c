@@ -217,7 +217,7 @@ static int safe_hook_execdir (void) {
 		 * Rename original function gets postfie '_orig'
 		 */
 		{
-			char            func_re[16] = { 0 };
+			char            func_re[32] = { 0 };
 			int             func_relen;
 			zend_function * zf;
 #if PHP_VERSION_ID < 60000
