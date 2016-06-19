@@ -12,7 +12,7 @@ if ( ! extension_loaded ('execdir') ) {
 exec_dir=/var/lib/php/bin
 --FILE--
 <?php
-$r = passthru ('ls /etc/hosts 2> /dev/null');
+$r = shell_exec ('ls /etc/hosts 2> /dev/null');
 var_dump ($r);
 ?>
 --EXPECT--

@@ -1,0 +1,7 @@
+php_execdir test data
+1. exec
+2. system
+3. passthru
+4. shell_exec
+5. popen
+6. proc_open
