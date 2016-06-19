@@ -1,5 +1,6 @@
 PHP execdir extension
 ===
+[![PHP license](https://img.shields.io/badge/license-PHP-blue.svg)](https://raw.githubusercontent.com/php/php-src/master/LICENSE) [![GitHub issues](https://img.shields.io/github/issues/OOPS-ORG-PHP/mod_execdir.svg)](https://github.com/OOPS-ORG-PHP/mod_execdir/issues) [![GitHub forks](https://img.shields.io/github/forks/OOPS-ORG-PHP/mod_execdir.svg)](https://github.com/OOPS-ORG-PHP/mod_execdir/network) [![GitHub stars](https://img.shields.io/github/stars/OOPS-ORG-PHP/mod_execdir.svg)](https://github.com/OOPS-ORG-PHP/mod_execdir/stargazers)
 
 ## License
 
