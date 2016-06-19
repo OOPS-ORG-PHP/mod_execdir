@@ -1,5 +1,5 @@
 --TEST--
-Check for execdir extension
+Check for jailed_shellcmd function
 --SKIPIF--
 <?php
 if ( ! extension_loaded ('execdir') ) {

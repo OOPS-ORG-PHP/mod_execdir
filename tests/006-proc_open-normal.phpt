@@ -1,5 +1,5 @@
 --TEST--
-Check for execdir extension
+Check for proc_open_re function that return success
 --SKIPIF--
 <?php
 if ( ! extension_loaded ('execdir') ) {
@@ -12,6 +12,8 @@ if ( ! extension_loaded ('execdir') ) {
 exec_dir=
 --FILE--
 <?php
+proc_nice (-10);
+
 $datafile = getcwd () . '/tests/data.txt';
 if ( ! file_exists ($datafile) )
 	$datafile = getcwd () . '/data.txt';

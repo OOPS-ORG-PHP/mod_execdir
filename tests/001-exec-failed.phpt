@@ -1,5 +1,5 @@
 --TEST--
-Check for execdir extension
+Check for exec_re function that has command not found
 --SKIPIF--
 <?php
 if ( ! extension_loaded ('execdir') ) {
