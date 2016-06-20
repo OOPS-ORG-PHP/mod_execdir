@@ -306,17 +306,12 @@ PHP_MINIT_FUNCTION (execdir)
 		 zend_ini_entry_def * p = (zend_ini_entry_def *) &ini_entries;
 
 		while ( p->name ) {
-#if PHP_VERSION_ID < 60000
-			zend_ini_entry_def * e;
-#else
-			zend_ini_entry     * e;
-			e = zend_hash_str_find_ptr (EG (ini_directives), p->name, p->name_length);
-#endif
+			zend_ini_entry * e;
 
 #if PHP_VERSION_ID < 60000
 			if ( zend_hash_find (EG (ini_directives), p->name, p->name_length, (void **) &e) == FAILURE )
 #else
-			if ( e == NULL )
+			if ( (e = zend_hash_str_find_ptr (EG (ini_directives), p->name, p->name_length)) == NULL )
 #endif
 			{
 				zend_register_ini_entries (p, module_number TSRMLS_CC);
@@ -363,7 +358,9 @@ PHP_MINIT_FUNCTION (execdir)
 PHP_MSHUTDOWN_FUNCTION (execdir)
 {
 	UNREGISTER_INI_ENTRIES ();
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
 	zend_hash_destroy (&execdir_submodules);
+#endif
 	return SUCCESS;
 }
 /* }}} */
