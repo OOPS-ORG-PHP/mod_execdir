@@ -1,5 +1,5 @@
 --TEST--
-Check for proc_open_re function that return success
+Check for proc_open_re function that has command not found
 --SKIPIF--
 <?php
 if ( ! extension_loaded ('execdir') ) {
