@@ -12,11 +12,11 @@ This program is under ***PHP License***.
 
 If you use ***mod_execdir*** extension, you can run only the shell command in the specified directory. And this means that possible to ***fundamentally protect*** the web shell and system shell injection attacks.
 
-This feature is an implementation to improve ***safe_mode_exec_dir*** before PHP 5.5.
+This feature is an implementation to improve ***safe_mode_exec_dir*** before PHP 5.4.
 
-***safe_mode_exec_dir*** function can be used only in ***SAFE MODE*** state, and it was removed from PHP 5.5. Also, the parser of ***safe_mode_exec_dir*** was written too simple and it has many restrictions in order to use.
+***safe_mode_exec_dir*** function can be used only in ***SAFE MODE*** state, and it was removed from PHP 5.4. Also, the parser of ***safe_mode_exec_dir*** was written too simple and it has many restrictions in order to use.
 
-The execdir exntesion is to complement the such disadvantages of ***safe_mode_exec_dir***, and support non ***SAFE MODE*** and over PHP 5.5.
+The execdir exntesion is to complement the such disadvantages of ***safe_mode_exec_dir***, and support non ***SAFE MODE*** and over PHP 5.4.
 
 This featurhe was made for <u>highlight syntax security hole of PHPBB</u> in May 2005. Also, it has been applied to large business site and AnNyung LInux distribution and verified more than 10 years.
 

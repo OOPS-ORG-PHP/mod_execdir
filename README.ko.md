@@ -12,11 +12,11 @@ This program is under PHP License.
 
 ***mod_execdir*** 확장은 특정 디렉토리에 있는 명령만 실행할 수 있도록 제한을 하여, web shell이나 system shell injection 공격을 <u>원천적으로 방어</u>할 수 있습니다.
 
-이 기능은 PHP 5.5 이전의 ***safe_mode_exec_dir*** 기능을 향상 구현한 것입니다.
+이 기능은 PHP 5.4 이전의 ***safe_mode_exec_dir*** 기능을 향상 구현한 것입니다.
 
-***safe_mode_exec_dir*** 기능은 오직 ***SAFE MODE***에서만 사용이 가능하며, PHP 5.5 이후 부터는 ***SAFE MODE***가 제거 되면서 더 이상 사용을 할 수가 없습니다. 또한, ***safe_mode_exec_dir***의 parser는 너무나 간단하게 되어 있어 사용을 하기에 제약이 많았습니다.
+***safe_mode_exec_dir*** 기능은 오직 ***SAFE MODE***에서만 사용이 가능하며, PHP 5.4 이후 부터는 ***SAFE MODE***가 제거 되면서 더 이상 사용을 할 수가 없습니다. 또한, ***safe_mode_exec_dir***의 parser는 너무나 간단하게 되어 있어 사용을 하기에 제약이 많았습니다.
 
-execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하여, ***SAFE MODE***가 아니고, 또한 PHP 5.5 이 후 버전에서도 사용할 수 있도록 지원을 합니다.
+execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하여, ***SAFE MODE***가 아니고, 또한 PHP 5.4 이후 버전에서도 사용할 수 있도록 지원을 합니다.
 
 2005년 5월 PHPBB의 <u>highlight syntax security hole</u> 때문에 만들어 졌으며, 대형 비지니스 사이트와 안녕 리눅스 배포본에 적용이 되어 10년 이상 검증이 되었습니다.
 

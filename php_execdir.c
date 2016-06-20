@@ -394,8 +394,8 @@ PHP_MINFO_FUNCTION (execdir)
 {
 	php_info_print_table_start ();
 	php_info_print_table_colspan_header (2, "execdir extension support");
-	php_info_print_table_row (2, "Summary", "blah blah");
-	php_info_print_table_row (2, "URL", "http://github.com/");
+	php_info_print_table_row (2, "Summary", "jailed system function");
+	php_info_print_table_row (2, "URL", "http://github.com/OOPS-ORG-PHP/mod_execdir");
 	php_info_print_table_row (2, "Build version", EXECDIR_EXT_VERSION);
 	php_info_print_table_row (2, "Default Exec DIR", PHP_EXECDIR);
 	php_info_print_table_end ();
