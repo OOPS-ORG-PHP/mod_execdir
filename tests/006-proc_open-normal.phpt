@@ -12,8 +12,6 @@ if ( ! extension_loaded ('execdir') ) {
 exec_dir=
 --FILE--
 <?php
-proc_nice (-10);
-
 $datafile = getcwd () . '/tests/data.txt';
 if ( ! file_exists ($datafile) )
 	$datafile = getcwd () . '/data.txt';
