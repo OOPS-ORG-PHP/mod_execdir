@@ -219,10 +219,6 @@ static int safe_hook_execdir (void) {
 			char            func_re[32] = { 0 };
 			int             func_relen;
 			zend_function * zf;
-#if PHP_VERSION_ID < 60000
-#else
-			zval          tmp;
-#endif
 
 			sprintf (func_re, "%s_orig", func);
 			func_relen = funclen + 5;
