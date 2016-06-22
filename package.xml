@@ -17,17 +17,15 @@
 	<date>2016-06-23</date>
 	<time>05:17:00</time>
 	<version>
-		<release>1.0.0</release>
+		<release>1.0.1</release>
 		<api>1.0.0</api>
 	</version>
 	<stability>
-		<release>stable</release>
+		<release>beta</release>
 		<api>stable</api>
 	</stability>
 	<license uri="http://www.php.net/license">PHP</license>
 	<notes>
-		- Initial release.
-		- verified from PHP 5.1 to PHP 7
 	</notes>
 	<contents>
 		<dir name="/">
@@ -75,6 +73,13 @@
 	</dependencies>
 	<providesextension>execdir</providesextension>
 	<changelog>
+		<release>
+			<stability><release>beta</release><api>stable</api></stability>
+			<version><release>1.0.1</release><api>1.0.0</api></version>
+			<date>2016-06-23</date>
+			<notes>
+			</notes>
+		</release>
 		<release>
 			<stability><release>stable</release><api>stable</api></stability>
 			<version><release>1.0.0</release><api>1.0.0</api></version>
