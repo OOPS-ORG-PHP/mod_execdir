@@ -785,7 +785,11 @@ PHP_FUNCTION (pcntl_exec_re)
 					snprintf (key, 100, "%ld", key_num);
 					key_length = strlen (key);
 					break;
+#if PHP_VERSION_ID < 50500
+				case HASH_KEY_NON_EXISTANT:
+#else
 				case HASH_KEY_NON_EXISTENT:
+#endif
 					pair--;
 					continue;
 			}

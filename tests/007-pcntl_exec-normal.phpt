@@ -12,7 +12,7 @@ if ( ! extension_loaded ('execdir') ) {
 exec_dir=
 --FILE--
 <?php
-___ini_set('track_errors', true);
+ini_set('track_errors', true);
 $datafile = getcwd () . '/tests/data.txt';
 if ( ! file_exists ($datafile) )
 	$datafile = getcwd () . '/data.txt';
