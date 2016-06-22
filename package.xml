@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.0.0" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+	http://pear.php.net/dtd/tasks-1.0.xsd
+	http://pear.php.net/dtd/package-2.0
+	http://pear.php.net/dtd/package-2.0.xsd">
+	<name>execdir</name>
+	<channel>pecl.php.net</channel>
+	<summary>execdir - jailed system command</summary>
+	<description>jailed system function. Run only the shell command in the specified directory.
+	</description>
+	<lead>
+		<name>JoungKyun.Kim</name>
+		<user>joungkyun</user>
+		<email>joungkyun@daum.net</email>
+		<active>yes</active>
+	</lead>
+	<date>2016-06-23</date>
+	<time>05:17:00</time>
+	<version>
+		<release>1.0.0</release>
+		<api>1.0.0</api>
+	</version>
+	<stability>
+		<release>stable</release>
+		<api>stable</api>
+	</stability>
+	<license uri="http://www.php.net/license">PHP</license>
+	<notes>
+		- Initial release.
+		- verified from PHP 5.1 to PHP 7
+	</notes>
+	<contents>
+		<dir name="/">
+			<file name="config.m4" role="src" />
+			<file name="README.md" role="doc" />
+			<file name="README.ko.md" role="doc" />
+			<file name="execdirapi.c" role="src" />
+			<file name="execdirapi.h" role="src" />
+			<file name="php_execdir.c" role="src" />
+			<file name="php_execdir.h" role="src" />
+			<file name="proc_open.c" role="src" />
+			<file name="proc_open5.c" role="src" />
+			<file name="proc_open53.c" role="src" />
+			<dir name="tests">
+				<file name="000-jailed_shellcmd.phpt" role="test" />
+				<file name="001-exec-failed.phpt" role="test" />
+				<file name="001-exec-normal.phpt" role="test" />
+				<file name="002-system-failed.phpt" role="test" />
+				<file name="002-system-normal.phpt" role="test" />
+				<file name="003-passthru-failed.phpt" role="test" />
+				<file name="003-passthru-normal.phpt" role="test" />
+				<file name="004-shell_exec-failed.phpt" role="test" />
+				<file name="004-shell_exec-normal.phpt" role="test" />
+				<file name="005-popen-failed.phpt" role="test" />
+				<file name="005-popen-normal.phpt" role="test" />
+				<file name="006-proc_open-failed.phpt" role="test" />
+				<file name="006-proc_open-normal.phpt" role="test" />
+				<file name="007-pcntl_exec-failed.phpt" role="test" />
+				<file name="007-pcntl_exec-normal.phpt" role="test" />
+				<file name="data.txt" role="doc" />
+			</dir>
+		</dir> <!-- / -->
+	</contents>
+	<dependencies>
+		<required>
+			<php>
+				<min>5.1.0</min>
+				<max>7.1.0</max>
+				<exclude>6.0.0</exclude>
+			</php>
+			<pearinstaller>
+				<min>1.4.3</min>
+			</pearinstaller>
+		</required>
+	</dependencies>
+	<providesextension>execdir</providesextension>
+	<changelog>
+		<release>
+			<stability><release>stable</release><api>stable</api></stability>
+			<version><release>1.0.0</release><api>1.0.0</api></version>
+			<date>2016-06-23</date>
+			<notes>
+					- Initial release.
+					- verified from PHP 5.1 to PHP 7
+			</notes>
+		</release>
+	</changelog>
+</package>
