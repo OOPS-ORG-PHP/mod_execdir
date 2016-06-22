@@ -697,7 +697,6 @@ PHP_FUNCTION (pcntl_exec_re)
 		*(pair) = NULL;
 
 		if ( execve (jpath, argv, envp) == -1 ) {
-			efree (jpath);
 			//PCNTL_G (last_error) = errno;
 			php_error_docref (NULL, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror (errno));
 		}
@@ -809,7 +808,6 @@ PHP_FUNCTION (pcntl_exec_re)
 		*(pair) = NULL;
 
 		if ( execve (jpath, argv, envp) == -1 ) {
-			efree (jpath);
 			//PCNTL_G (last_error) = errno;
 			php_error_docref (NULL TSRMLS_CC, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror (errno));
 		}
@@ -820,7 +818,6 @@ PHP_FUNCTION (pcntl_exec_re)
 	} else {
 
 		if ( execv (jpath, argv) == -1 ) {
-			efree (jpath);
 			//PCNTL_G(last_error) = errno;
 			php_error_docref (NULL TSRMLS_CC, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror (errno));
 		}
