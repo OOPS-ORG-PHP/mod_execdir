@@ -809,7 +809,11 @@ PHP_FUNCTION (pcntl_exec_re)
 
 		if ( execve (jpath, argv, envp) == -1 ) {
 			//PCNTL_G (last_error) = errno;
+#if PHP_VERSION_ID < 50200
+			php_error_docref (NULL TSRMLS_CC, E_WARNING, "pcntl_exec(): Error has occurred: (errno %d) %s", errno, strerror (errno));
+#else
 			php_error_docref (NULL TSRMLS_CC, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror (errno));
+#endif
 		}
 
 		/* Cleanup */
@@ -819,7 +823,11 @@ PHP_FUNCTION (pcntl_exec_re)
 
 		if ( execv (jpath, argv) == -1 ) {
 			//PCNTL_G(last_error) = errno;
+#if PHP_VERSION_ID < 50200
+			php_error_docref (NULL TSRMLS_CC, E_WARNING, "pcntl_exec(): Error has occurred: (errno %d) %s", errno, strerror (errno));
+#else
 			php_error_docref (NULL TSRMLS_CC, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror (errno));
+#endif
 		}
 	}
 /* }}} */
