@@ -42,11 +42,10 @@ For this features, we support 2 building method.
   1. build with direct patch on PHP source code
     * support from PHP 4.3 and later
     * better performance than mod_execdir.
-    * support ***pcntl_open***
   2. build with mod_execdir extension
     * support PHP 5 and later
     * verified test on PHP 5.5 and later
-    * don't support ***pcntl_open***. Instead of using mod_jailed_pcntl extension (Not yet)
+    * if failed call ***pcntl_exec***, can not use ***pcntl_get_last_error*** function. Need to modify your code.
 
 
 ### 2. PHP source patch
@@ -182,6 +181,24 @@ The list of original functions is follow:
   * ***proc_close_re*** : mapping ***proc_close*** function
   * ***proc_terminate_re*** :  mapping ***proc_terminate*** function
   * ***proc_get_status_re*** : mapping ***proc_get_status*** function
+  * ***pcntl_exec_re*** : mapping ***pcntl_exec*** function  
+    Can not use ***pcntl_get_last_error()*** fucntion, if call failed ***pcntl_exec***, so Need to modify your code as follows:  
+    ***Before:***  
+
+  ```php
+  <?php
+  if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
+      echo pcntl_strerror (pcntl_get_last_error ()) . "\n"
+  }
+  ```
+    ***After:***  
+    
+  ```php
+  ini_set ('track_errors', true);
+  if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
+      echo $php_errormsg . "\n";
+  }
+  ```
   * ***jailed_shellcmd*** : return jailed shell command strings
   ```
   Prototype: (string) jailed_shellcmd (string path)

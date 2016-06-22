@@ -109,6 +109,12 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_proc_open, 0, 0, 3)
 	ZEND_ARG_INFO(0, other_options) /* ARRAY_INFO(0, other_options, 1) */
 ZEND_END_ARG_INFO()
 #endif
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_pcntl_exec, 0, 0, 1)
+    ZEND_ARG_INFO(0, path)
+    ZEND_ARG_INFO(0, args)
+    ZEND_ARG_INFO(0, envs)
+ZEND_END_ARG_INFO()
 /* }}} */
 
 const zend_function_entry execdir_functions[] = {
@@ -117,6 +123,7 @@ const zend_function_entry execdir_functions[] = {
 	PHP_FE (passthru_re,        arginfo_passthru_re)
 	PHP_FE (shell_exec_re,      NULL)
 	PHP_FE (popen_re,           NULL)
+	PHP_FE (pcntl_exec_re,      arginfo_pcntl_exec)
 	PHP_FE (jailed_shellcmd,    NULL)
 
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
@@ -137,6 +144,7 @@ const zend_function_entry execdir_hook_functions[] = {
 	PHP_FALIAS (passthru,        passthru_re,        arginfo_passthru_re)
 	PHP_FALIAS (shell_exec,      shell_exec_re,      NULL)
 	PHP_FALIAS (popen,           popen_re,           NULL)
+	PHP_FALIAS (pcntl_exec,      pcntl_exec_re,      arginfo_pcntl_exec)
 
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
 	PHP_FALIAS (proc_open,       proc_open_re,       arginfo_proc_open)
@@ -176,6 +184,9 @@ PHP_INI_END ()
 /* }}} */
 
 #ifdef COMPILE_DL_EXECDIR
+#ifdef ZTS
+ZEND_TSRMLS_CACHE_DEFINE()
+#endif
 ZEND_GET_MODULE (execdir)
 #endif
 
@@ -601,10 +612,109 @@ PHP_FUNCTION (popen_re)
 /* }}} */
 
 /* {{{ PHP_FUNCTION (bool) pcntl_exec_re (string $path [, array args [, array envs]])
+ * Executes specified program in current process space as defined by exec(2)
  */
 PHP_FUNCTION (pcntl_exec_re)
 {
-	RETURN_EXECDIR_STRING ("pcntl_exec", 1);
+	zval        * args = NULL, * envs = NULL;
+	zval        * element;
+	HashTable   * args_hash, *envs_hash;
+	int           argc = 0, argi = 0;
+	int           envc = 0, envi = 0;
+	char       ** argv = NULL, ** envp = NULL;
+	char       ** current_arg, ** pair;
+	int           pair_length;
+	zend_string * key;
+	char        * path, * jpath;
+	size_t        path_len;
+	zend_ulong    key_num;
+
+	if ( strcmp (sapi_module.name, "cli") != 0 &&
+		 strncmp (sapi_module.name, "cgi", 3) != 0 &&
+		 strncmp (sapi_module.name, "fpm", 3) != 0 ) {
+		php_error_docref (NULL, E_WARNING, "pcntl_exec_re can only work on CLI/CGI SAPI.");
+		RETURN_FALSE;
+	}
+
+	if ( zend_parse_parameters (ZEND_NUM_ARGS (), "p|aa", &path, &path_len, &args, &envs) == FAILURE ) {
+		return;
+	}
+
+	if ( ZEND_NUM_ARGS () > 1 ) {
+		/* Build argument list */
+		args_hash = Z_ARRVAL_P (args);
+		argc = zend_hash_num_elements (args_hash);
+
+		argv = safe_emalloc ((argc + 2), sizeof (char *), 0);
+		*argv = path;
+		current_arg = argv + 1;
+		ZEND_HASH_FOREACH_VAL (args_hash, element) {
+			if ( argi >= argc ) break;
+			convert_to_string_ex (element);
+			*current_arg = Z_STRVAL_P (element);
+			argi++;
+			current_arg++;
+		} ZEND_HASH_FOREACH_END ();
+		*(current_arg) = NULL;
+	} else {
+		argv = emalloc (2 * sizeof (char *));
+		*argv = path;
+		*(argv + 1) = NULL;
+	}
+
+	jpath = get_jailed_shell_cmd(path);
+
+	if ( ZEND_NUM_ARGS () == 3 ) {
+		/* Build environment pair list */
+		envs_hash = Z_ARRVAL_P (envs);
+		envc = zend_hash_num_elements (envs_hash);
+
+		pair = envp = safe_emalloc ((envc + 1), sizeof (char *), 0);
+		ZEND_HASH_FOREACH_KEY_VAL (envs_hash, key_num, key, element) {
+			if ( envi >= envc ) break;
+			if ( ! key ) {
+				key = zend_long_to_str (key_num);
+			} else {
+				zend_string_addref (key);
+			}
+
+			convert_to_string_ex (element);
+
+			/* Length of element + equal sign + length of key + null */
+			pair_length = Z_STRLEN_P (element) + ZSTR_LEN (key) + 2;
+			*pair = emalloc (pair_length);
+			strlcpy (*pair, ZSTR_VAL (key), ZSTR_LEN (key) + 1);
+			strlcat (*pair, "=", pair_length);
+			strlcat (*pair, Z_STRVAL_P (element), pair_length);
+
+			/* Cleanup */
+			zend_string_release (key);
+			envi++;
+			pair++;
+		} ZEND_HASH_FOREACH_END ();
+		*(pair) = NULL;
+
+		if ( execve (jpath, argv, envp) == -1 ) {
+			efree (jpath);
+			//PCNTL_G (last_error) = errno;
+			php_error_docref (NULL, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror (errno));
+		}
+
+		/* Cleanup */
+		for ( pair = envp; *pair != NULL; pair++ ) efree (*pair);
+		efree (envp);
+	} else {
+
+		if ( execv (jpath, argv) == -1 ) {
+			//PCNTL_G (last_error) = errno;
+			php_error_docref (NULL, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror (errno));
+		}
+	}
+
+	efree (jpath);
+	efree (argv);
+
+	RETURN_FALSE;
 }
 /* }}} */
 

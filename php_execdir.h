@@ -57,9 +57,9 @@ PHP_MINFO_FUNCTION (execdir);
 PHP_FUNCTION (exec_re);
 PHP_FUNCTION (system_re);
 PHP_FUNCTION (passthru_re);
-PHP_FUNCTION (pcntl_exec_re);
 PHP_FUNCTION (shell_exec_re);
 PHP_FUNCTION (popen_re);
+PHP_FUNCTION (pcntl_exec_re);
 PHP_FUNCTION (jailed_shellcmd);
 
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
