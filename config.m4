@@ -1,7 +1,7 @@
 dnl $Id: $
 dnl config.m4 for extension execdir
 
-PHP_ARG_WITH(execdir, whether to enable execdir support,
+PHP_ARG_WITH(execdir, for execdir support,
 [  --with-execdir[=DIR]      Jailed shell command to the specified directory
                           [[default=/var/lib/php/bin]]])
 
