@@ -55,11 +55,11 @@ First, download patch file that matches PHP version. If it does not exsits, down
 And execute configure with ***--with-exec-dir*** option.
 
 ```shell
-[root@host ~]$ cd php-7.0.7
-[root@host php-7.0.7]$ wget https://raw.githubusercontent.com/OOPS-ORG-PHP/mod_execdir/master/patches/php-7.0.7-execdir.patch
-[root@host php-7.0.7]$ patch -p1 < ./php-7.0.7-execdir.patch
-[root@host php-7.0.7]$ ./configure --with-exec-dir=/var/lib/php/bin ... (and with other options)
-[root@host php-7.0.7]$ make && make install
+[root@host ~]$ cd php-7.1.0
+[root@host php-7.1.0]$ wget https://raw.githubusercontent.com/OOPS-ORG-PHP/mod_execdir/master/patches/php-7.1.0-execdir.patch
+[root@host php-7.1.0]$ patch -p1 < ./php-7.1.0-execdir.patch
+[root@host php-7.1.0]$ ./configure --with-exec-dir=/var/lib/php/bin ... (and with other options)
+[root@host php-7.1.0]$ make && make install
 ```
 
 
