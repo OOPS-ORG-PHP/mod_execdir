@@ -14,8 +14,8 @@
 		<email>joungkyun@daum.net</email>
 		<active>yes</active>
 	</lead>
-	<date>2016-06-23</date>
-	<time>05:17:00</time>
+	<date>2017-01-06</date>
+	<time>04:10:22</time>
 	<version>
 		<release>1.0.1</release>
 		<api>1.0.0</api>
@@ -76,8 +76,9 @@
 		<release>
 			<stability><release>beta</release><api>stable</api></stability>
 			<version><release>1.0.1</release><api>1.0.0</api></version>
-			<date>2016-06-23</date>
+			<date>2017-01-06</date>
 			<notes>
+				- fixed #9 can't print debug message
 			</notes>
 		</release>
 		<release>
@@ -85,8 +86,8 @@
 			<version><release>1.0.0</release><api>1.0.0</api></version>
 			<date>2016-06-23</date>
 			<notes>
-					- Initial release.
-					- verified from PHP 5.1 to PHP 7
+				- Initial release.
+				- verified from PHP 5.1 to PHP 7
 			</notes>
 		</release>
 	</changelog>

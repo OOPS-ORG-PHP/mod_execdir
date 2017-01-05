@@ -81,20 +81,37 @@ PHPAPI char * get_jailed_shell_cmd (char * cmd) {
 
 		if ( c ) *c = ' ';
 
-		if ( b )
+		if ( b ) {
 			c_len = sizeof (char *) * (strlen (b) + c_len + 1);
-		else
+			if ( strncmp (cmd, "DEBUG:", 6) == 0 || strncmp (cmd, "DDEBUG:", 7) == 0 )
+				c_len += 7;
+		} else
 			c_len = sizeof (char *) * (strlen (tmp) + c_len + 1);
 
 		__cmd = emalloc (c_len);
 		memset (__cmd, 0, c_len);
 
-		if ( c )
-			sprintf (__cmd, "%s%s", b ? b : tmp, c);
-		else {
-			if ( b )
-				memcpy (__cmd, b, strlen (b));
-			else
+		if ( c ) {
+			if ( b ) {
+				if ( strncmp (cmd, "DEBUG:", 6) == 0 )
+					sprintf (__cmd, "DEBUG:%s%s", b, c);
+				else if ( strncmp (cmd, "DDEBUG:", 7) == 0 )
+					sprintf (__cmd, "DDEBUG:%s%s", b, c);
+				else
+					sprintf (__cmd, "%s%s", b, c);
+			} else
+				sprintf (__cmd, "%s%s", tmp, c);
+		} else {
+			if ( b ) {
+				if ( strncmp (cmd, "DEBUG:", 6) == 0 ) {
+					memcpy (__cmd, "DEBUG:", 6);
+					memcpy (__cmd + 6, b, strlen (b));
+				} else if ( strncmp (cmd, "DDEBUG:", 7) == 0 ) {
+					memcpy (__cmd, "DDEBUG:", 7);
+					memcpy (__cmd + 7, b, strlen (b));
+				} else
+					memcpy (__cmd, b, strlen (b));
+			} else
 				memcpy (__cmd, tmp, strlen (tmp));
 		}
 
@@ -268,7 +285,7 @@ static char * php_jailed_shell_cmd (char * cmd, char * path) {
 	_start = 0;
 
 	if ( debug )
-		php_printf ("p **> %s\n", _cmd);
+		php_printf ("Orig Cmd ==> %s\n", _cmd);
 
 	for ( i=0; i<cmd_len; i++ ) {
 roopstart:
@@ -405,7 +422,7 @@ roopstart:
 	}
 
 	if ( debug )
-		 php_printf ("p ==> %s\n--\n", buf);
+		 php_printf ("Conv Cmd ==> %s\n--\n", buf);
 
 	efree (_cmd);
 	efree (_path);
