@@ -179,7 +179,7 @@ zend_module_entry execdir_module_entry = {
 /* {{{ ini_entries[]
  */
 PHP_INI_BEGIN ()
-	STD_PHP_INI_ENTRY ("exec_dir", PHP_EXECDIR, ZEND_INI_SYSTEM, OnUpdateString, exec_dir, zend_execdir_globals, execdir_globals)
+	STD_PHP_INI_ENTRY ("exec_dir", PHP_EXECDIR, PHP_INI_SYSTEM, OnUpdateString, exec_dir, zend_execdir_globals, execdir_globals)
 PHP_INI_END ()
 /* }}} */
 
