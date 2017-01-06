@@ -32,6 +32,14 @@ struct quote_chk_char {
 	char acur;
 };
 
+typedef struct cmd_argv {
+	char * cmd;
+	int    clen;
+	char * argv;
+	int    alen;
+	int    debug;
+} CmdArgv;
+
 PHPAPI char * get_jailed_shell_cmd (char *);
 static char * php_jailed_shell_cmd (char *, char *);
 static int    check_quote_block (struct quote_chk_char, struct quote_value *);

@@ -38,6 +38,134 @@
 
 extern ZEND_DECLARE_MODULE_GLOBALS (execdir)
 
+/* {{{ +-- CmdArgv * cmdargv_init (void)
+ *
+ * memory allocation CmdArgv structure
+ */
+CmdArgv * cmdargv_init (void) {
+	CmdArgv * ret;
+
+	ret = emalloc (sizeof (CmdArgv) + 1);
+	ret->cmd  = NULL;
+	ret->clen = 0;
+	ret->argv = NULL;
+	ret->alen = 0;
+	ret->debug = 0;
+
+	return ret;
+}
+/* }}} */
+
+/* {{{ +-- void cmdargv_free (CmdArgv * v)
+ *
+ * memory free CmdArgv structure
+ */
+void cmdargv_free (CmdArgv * v) {
+	if ( v == NULL )
+		return;
+
+	if ( v->cmd != NULL )
+		efree (v->cmd);
+	if ( v->argv != NULL )
+		efree (v->argv);
+
+	efree (v);
+	v = NULL;
+}
+/* }}} */
+
+/* {{{ +-- CmdArgv make_cmdargv (char * cmd)
+ *
+ * saperate command and command arguments
+ */
+CmdArgv * make_cmdargv (char * cmd) {
+	int len = strlen (cmd);
+	int i   = 0;
+	char * path = cmd;
+	CmdArgv * ret = NULL;
+
+	//ret = cmdargv_init ();
+	ret = emalloc (sizeof (CmdArgv));
+	ret->cmd = NULL;
+	ret->clen = 0;
+	ret->argv = NULL;
+	ret->alen = 0;
+	ret->debug = 0;
+
+	// trim path
+	for ( i=0; i<len; i++ ) {
+		// 32 -> space, 9 -> tab
+		if ( cmd[i] == 32 || cmd[i] == 9 ) {
+			path = cmd + i + 1;
+			continue;
+		}
+		break;
+	}
+	len = strlen (path);
+
+	if ( strncmp ("DEBUG:", path, 6) == 0 ) {
+		ret->debug = 1;
+		path += 6;
+	} else if ( strncmp ("DDEBUG:", path, 7) == 0 ) {
+		ret->debug = 2;
+		path += 7;
+	}
+
+	// trim path again for DEBUG:
+	for ( i=0; i<len; i++ ) {
+		// 32 -> space, 9 -> tab
+		if ( path[i] == 32 || path[i] == 9 ) {
+			path += (i + 1);
+			continue;
+		}
+		break;
+	}
+	len = strlen (path);
+
+	if ( path[0] == '`' || (path[0] == '$' && path[1] == '(') ) {
+		ret->cmd  = estrdup (path);
+		ret->clen = strlen (path);
+
+		if ( ret->debug > 0 ) {
+			php_printf ("-- make_cmdargv ------\n");
+			php_printf ("Origianl : %s\n", cmd);
+			php_printf ("cmd      : %s (%d)\n", ret->cmd, ret->clen);
+			php_printf ("argv     : %s (%d)\n", ret->argv, ret->alen);
+			php_printf ("----------------------\n\n");
+		}
+
+		return ret;
+	}
+
+	for ( i=0; i<len; i++ ) {
+		// 32 -> space, 9 -> tab
+		if ( path[i] == 32 || path[i] == 9 || path[i] == ';' || path [i] == '|' || path[i] == '&' || path[i] == '>' ) {
+			// 92 -> back slash
+			if ( i == 0 || path[i-1] == 92 )
+				continue;
+
+			break;
+		}
+	}
+
+	ret->argv = estrdup (path + i);
+	*(path + i) = 0;
+	ret->alen = strlen (ret->argv);
+	ret->cmd  = estrdup (path);
+	ret->clen = strlen (path);
+
+	if ( ret->debug > 0 ) {
+		php_printf ("-- make_cmdargv ------\n");
+		php_printf ("Origianl : %s\n", cmd);
+		php_printf ("cmd      : %s (%d)\n", ret->cmd, ret->clen);
+		php_printf ("argv     : %s (%d)\n", ret->argv, ret->alen);
+		php_printf ("----------------------\n\n");
+	}
+
+	return ret;
+}
+/* }}} */
+
 /* {{{ get_jailed_shell_cmd
  *
  * return value is needed to call efree
@@ -61,62 +189,32 @@ PHPAPI char * get_jailed_shell_cmd (char * cmd) {
 	exec_len = strlen (exec_dir);
 
 	if ( exec_len ) {
-		char   * b = NULL,
-			   * c = NULL;
-		char   * tmp;
-		char   * __cmd;
-		size_t   c_len = 0;
+		CmdArgv * cp;
+		char * c = NULL;
+		char * tmp;
+		char * vcmd;
+		char * __cmd;
 
-		c = strchr (cmd, ' ');
-		if ( c ) {
-			c_len = strlen (c);
-			*c = 0;
-		}
+		cp = make_cmdargv (cmd);
 
-		//php_printf ("g --> %s : %s : %s : '%c'\n", c, b, exec_dir, PHP_DIR_SEPARATOR);
-		//php_printf ("g ==> %s\n", cmd);
+		if ( cp->cmd[0] != '`' && cp->cmd[0] != '$' && (c = strrchr (cp->cmd, '/')) )
+			vcmd = c + 1;
+		else
+			vcmd = cp->cmd;
 
-		tmp = estrdup (cmd);
-		b = strrchr (tmp, '/');
+		__cmd = emalloc (sizeof (char) * (cp->clen + cp->alen + 7 + 1));
+		memset (__cmd, 0, sizeof (char) * (cp->clen + cp->alen + 7 + 1));
 
-		if ( c ) *c = ' ';
+		sprintf (
+				__cmd, "%s%s%s",
+				cp->debug == 1 ? "DEBUG:" : (cp->debug == 2 ? "DDEBUG:" : ""),
+				vcmd,
+				cp->alen ? cp->argv : ""
+				);
 
-		if ( b ) {
-			c_len = sizeof (char *) * (strlen (b) + c_len + 1);
-			if ( strncmp (cmd, "DEBUG:", 6) == 0 || strncmp (cmd, "DDEBUG:", 7) == 0 )
-				c_len += 7;
-		} else
-			c_len = sizeof (char *) * (strlen (tmp) + c_len + 1);
-
-		__cmd = emalloc (c_len);
-		memset (__cmd, 0, c_len);
-
-		if ( c ) {
-			if ( b ) {
-				if ( strncmp (cmd, "DEBUG:", 6) == 0 )
-					sprintf (__cmd, "DEBUG:%s%s", b, c);
-				else if ( strncmp (cmd, "DDEBUG:", 7) == 0 )
-					sprintf (__cmd, "DDEBUG:%s%s", b, c);
-				else
-					sprintf (__cmd, "%s%s", b, c);
-			} else
-				sprintf (__cmd, "%s%s", tmp, c);
-		} else {
-			if ( b ) {
-				if ( strncmp (cmd, "DEBUG:", 6) == 0 ) {
-					memcpy (__cmd, "DEBUG:", 6);
-					memcpy (__cmd + 6, b, strlen (b));
-				} else if ( strncmp (cmd, "DDEBUG:", 7) == 0 ) {
-					memcpy (__cmd, "DDEBUG:", 7);
-					memcpy (__cmd + 7, b, strlen (b));
-				} else
-					memcpy (__cmd, b, strlen (b));
-			} else
-				memcpy (__cmd, tmp, strlen (tmp));
-		}
-
-		efree (tmp);
+		cmdargv_free (cp);
 		_cmd = php_jailed_shell_cmd (__cmd, exec_dir);
+		efree (__cmd);
 	} else {
 		_cmd = estrdup (cmd);
 	}
@@ -200,6 +298,7 @@ static char * php_jailed_shell_cmd (char * cmd, char * path) {
 	char   * _path, * _tpath;
 	int      _start;
 	int      debug = 0;
+	int      bskip = 0;
 	struct quote_value qv = { 0, 0, 0, 0, 0 };
 	struct quote_chk_char qc;
 
@@ -278,7 +377,8 @@ static char * php_jailed_shell_cmd (char * cmd, char * path) {
 	buf = emalloc (buf_len);
 	memset (buf, 0, buf_len);
 
-	memcpy (buf, _path, path_len);
+	if ( _cmd[0] != ';' )
+		memcpy (buf, _path, path_len);
 	ep = strlen (buf);
 
 	_len   = 0;
@@ -340,7 +440,12 @@ roopstart:
 					goto roopstart;
 				}
 
-				memcpy (buf + ep, _cmd + _start, i - _start + 1);
+				if ( ! bskip )
+					memcpy (buf + ep, _cmd + _start, i - _start + 1);
+				else {
+					memset (buf + ep, _cmd[i], 1);
+					bskip = 0;
+				}
 				_start = i + 1;
 				ep = strlen (buf);
 
@@ -359,8 +464,8 @@ roopstart:
 				}
 
 				// if not case of $() or && or ||, skip
-				if ( _cmd[i] == '$' && _cmd[i+1] != '(' ) {
-					i++;
+				if ( _cmd[i] == '$' && _cmd[i+1] != '(' && ! qv.daquote ) {
+					i+=2;
 					goto roopstart;
 				}
 
@@ -394,6 +499,19 @@ roopstart:
 						int    _vcmd_len = 0, y;
 
 						for ( y=j; y<cmd_len; y++ ) {
+							// if path include backticks (/bin/`echo /bin/ls`)
+							//php_printf ("+ %c\n", _cmd[y]);
+							if ( (! qv.bquote && _cmd[y] == '`') || (! qv.daquote && _cmd[y] == '$' && _cmd[y+1] == '(') ) {
+								memcpy (buf + ep, path, path_len);
+								ep = strlen (buf);
+								memset (buf + ep, '/', 1);
+								ep++;
+								//php_printf ("~~~~~~~~~~~hel\n");
+								i = y;
+								bskip++;
+								goto roopstart;
+							}
+
 							// blank ( ) => 32
 							// tab (\t)  => 9
 							if ( _cmd[y] == 32 || _cmd[y] == 9 || (qv.bquote && _cmd[y] == '`') ) {
@@ -403,15 +521,22 @@ roopstart:
 									_vcmd_len = strlen (_vcmd);
 									i = y;
 
-									//php_printf ("***** => %s : %s, %d, %d\n", vcmd, _vcmd, qv.bquote, i);
+									//php_printf ("11***** => %s : %s, %d, %d\n", vcmd, _vcmd, qv.bquote, i);
 									if ( _cmd[y] == '`' )
 										 qv.bquote = 0;
+									//php_printf ("11***** => %s : %s, %d, %d\n", vcmd, _vcmd, qv.bquote, i);
 
 									break;
 							}
 						}
+
+						//php_printf ("!!!!!!!!!! ---> %d\n", ep);
+						//php_printf ("!!!!!!!!!! ---> %s\n", buf);
+						//php_printf ("!!!!!!!!!! ---> %s\n", _vcmd);
+
 						memcpy (buf + ep, _path, path_len);
 						memcpy (buf + ep + path_len, _vcmd, _vcmd_len);
+						//php_printf ("*********** -> %s\n", buf);
 						ep += (path_len + _vcmd_len);
 						_start = i;
 						break;

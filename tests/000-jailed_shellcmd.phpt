@@ -9,11 +9,48 @@ if ( ! extension_loaded ('execdir') ) {
 --POST--
 --GET--
 --INI--
-exec_dir=/var/lib/php/bin
+exec_dir=/var/lib/php71/bin
 --FILE--
 <?php
-$cmd = "/bin/ls";
-var_dump (jailed_shellcmd ($cmd));
+if ( file_exists ('tests/cmdformat.txt') )
+	$target = 'tests/cmdformat.txt';
+else
+	$target = 'cmdformat.txt';
+
+$fp = fopen ($target, 'rb');
+$exec_dir = ini_get ('exec_dir');
+
+while ( ($buf = fgets ($fp, 128)) !== false ) {
+	$buf = trim ($buf);
+	if ( preg_match ('/#execdir#/', $buf) ) {
+		$res[] = preg_replace ('/#execdir#/', $exec_dir, $buf);
+	} else {
+		$cmds[] = $buf;
+	}
+}
+
+foreach ( $cmds as $key => $cmd ) {
+	$r = jailed_shellcmd ($cmd);
+
+	if ( $r == $res[$key] ) echo "yes\n";
+	else echo "no\n";
+}
 ?>
 --EXPECT--
-string(19) "/var/lib/php/bin/ls"
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes
+yes

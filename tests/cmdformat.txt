@@ -1,0 +1,34 @@
+ls -al /etc/hosts
+#execdir#/ls -al /etc/hosts
+ls -al /etc/ | grep hosts
+#execdir#/ls -al /etc/ | #execdir#/grep hosts
+/bin/ls /etc/ | grep hosts
+#execdir#/ls /etc/ | #execdir#/grep hosts
+cat $(echo "/etc/passwd") | grep root; ls -al
+#execdir#/cat $(#execdir#/echo "/etc/passwd") | #execdir#/grep root; #execdir#/ls -al
+cat `echo "/etc/passwd"` | grep root; ls -al
+#execdir#/cat `#execdir#/echo "/etc/passwd"` | #execdir#/grep root; #execdir#/ls -al
+echo '$(ls -l | grep abc)' | grep abc
+#execdir#/echo '$(ls -l | grep abc)' | #execdir#/grep abc
+echo "$(ls -l | grep abc)" | grep abc
+#execdir#/echo "$(#execdir#/ls -l | #execdir#/grep abc)" | #execdir#/grep abc
+$(echo /bin/echo) abc
+#execdir#/$(#execdir#/echo /bin/echo) abc
+`echo /bin/echo` abc
+#execdir#/`#execdir#/echo /bin/echo` abc
+ls -al; /bin/`/bin/ps aux > /dev/shm/z3.txt`; /bin/ls -al
+#execdir#/ls -al; #execdir#/`#execdir#/ps aux > /dev/shm/z3.txt`; #execdir#/ls -al
+ls -al; /bin`/bin/ps aux > /dev/shm/z3.txt`; /bin/ls -al
+#execdir#/ls -al; #execdir#/`#execdir#/ps aux > /dev/shm/z3.txt`; #execdir#/ls -al
+ls -al; `/bin/ps aux > /dev/shm/z3.txt`; /bin/ls -al
+#execdir#/ls -al; #execdir#/`#execdir#/ps aux > /dev/shm/z3.txt`; #execdir#/ls -al
+ls -al; /bin/`ps aux > /dev/shm/z3.txt`; ls -al
+#execdir#/ls -al; #execdir#/`#execdir#/ps aux > /dev/shm/z3.txt`; #execdir#/ls -al
+ls -al; /bin/$(/bin/ps aux > /dev/shm/z3.txt)
+#execdir#/ls -al; #execdir#/$(#execdir#/ps aux > /dev/shm/z3.txt)
+ls -al; /bin$(/bin/ps aux > /dev/shm/z3.txt)
+#execdir#/ls -al; #execdir#/$(#execdir#/ps aux > /dev/shm/z3.txt)
+ls -al; $(/bin/ps aux > /dev/shm/z3.txt); ls -al
+#execdir#/ls -al; #execdir#/$(#execdir#/ps aux > /dev/shm/z3.txt); #execdir#/ls -al
+ls -al; /bin/$(ps aux > /dev/shm/z3.txt)
+#execdir#/ls -al; #execdir#/$(#execdir#/ps aux > /dev/shm/z3.txt)
