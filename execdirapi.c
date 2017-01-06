@@ -74,15 +74,15 @@ void cmdargv_free (CmdArgv * v) {
 }
 /* }}} */
 
-/* {{{ +-- CmdArgv make_cmdargv (char * cmd)
+/* {{{ +-- CmdArgv * make_cmdargv (char * cmd)
  *
  * saperate command and command arguments
  */
 CmdArgv * make_cmdargv (char * cmd) {
-	int len = strlen (cmd);
-	int i   = 0;
-	char * path = cmd;
-	CmdArgv * ret = NULL;
+	int       len  = strlen (cmd);
+	int       i    = 0;
+	char    * path = cmd;
+	CmdArgv * ret  = NULL;
 
 	//ret = cmdargv_init ();
 	ret = emalloc (sizeof (CmdArgv));
@@ -166,7 +166,7 @@ CmdArgv * make_cmdargv (char * cmd) {
 }
 /* }}} */
 
-/* {{{ get_jailed_shell_cmd
+/* {{{ +-- PHPAPI char * get_jailed_shell_cmd (char * cmd)
  *
  * return value is needed to call efree
  */
@@ -190,10 +190,10 @@ PHPAPI char * get_jailed_shell_cmd (char * cmd) {
 
 	if ( exec_len ) {
 		CmdArgv * cp;
-		char * c = NULL;
-		char * tmp;
-		char * vcmd;
-		char * __cmd;
+		char    * c = NULL;
+		char    * tmp;
+		char    * vcmd;
+		char    * __cmd;
 
 		cp = make_cmdargv (cmd);
 
@@ -225,7 +225,7 @@ PHPAPI char * get_jailed_shell_cmd (char * cmd) {
 }
 /* }}} */
 
-/* {{{ check_quote_block
+/* {{{ +-- static int check_quote_block (struct quote_chk_char qc, struct quote_value * _qv)
  *
  * case by single quote or double quote
  * single quote (')  is digit 39
@@ -285,7 +285,7 @@ static int check_quote_block (struct quote_chk_char qc, struct quote_value * _qv
 }
 /* }}} */
 
-/* {{{ php_jailed_shell_cmd
+/* {{{ static char * php_jailed_shell_cmd (char * cmd, char * path)
  */
 static char * php_jailed_shell_cmd (char * cmd, char * path) {
 	int      cmd_len  = 0;
@@ -494,8 +494,8 @@ roopstart:
 						i++;
 					} else {
 						char   vcmd[256] = { 0, };
-						char * _vcmd = NULL;
-						char * _tvcmd = NULL;
+						char * _vcmd     = NULL;
+						char * _tvcmd    = NULL;
 						int    _vcmd_len = 0, y;
 
 						for ( y=j; y<cmd_len; y++ ) {
