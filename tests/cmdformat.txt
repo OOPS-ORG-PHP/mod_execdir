@@ -32,3 +32,5 @@ ls -al; $(/bin/ps aux > /dev/shm/z3.txt); ls -al
 #execdir#/ls -al; #execdir#/$(#execdir#/ps aux > /dev/shm/z3.txt); #execdir#/ls -al
 ls -al; /bin/$(ps aux > /dev/shm/z3.txt)
 #execdir#/ls -al; #execdir#/$(#execdir#/ps aux > /dev/shm/z3.txt)
+ls $(ls -al); ls -la $(ls -al `ls -al $(ls -al)`); $(ls -al); ls -al
+#execdir#/ls $(#execdir#/ls -al); #execdir#/ls -la $(#execdir#/ls -al `#execdir#/ls -al $(#execdir#/ls -al)`); #execdir#/$(#execdir#/ls -al); #execdir#/ls -al
