@@ -1,6 +1,6 @@
 diff -urNp php-7.0.7.org/configure php-7.0.7/configure
 --- php-7.0.7.org/configure	2016-05-25 22:13:18.000000000 +0900
-+++ php-7.0.7/configure	2016-06-18 04:09:17.092889166 +0900
++++ php-7.0.7/configure	2017-01-07 01:19:02.471164311 +0900
 @@ -15721,6 +15721,45 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
@@ -49,7 +49,7 @@ diff -urNp php-7.0.7.org/configure php-7.0.7/configure
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PHP's own SIGCHLD handler" >&5
 diff -urNp php-7.0.7.org/configure.in php-7.0.7/configure.in
 --- php-7.0.7.org/configure.in	2016-05-25 22:13:07.000000000 +0900
-+++ php-7.0.7/configure.in	2016-06-18 04:09:17.095889329 +0900
++++ php-7.0.7/configure.in	2017-01-07 01:19:02.474164476 +0900
 @@ -926,6 +926,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
  
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
@@ -72,7 +72,7 @@ diff -urNp php-7.0.7.org/configure.in php-7.0.7/configure.in
  
 diff -urNp php-7.0.7.org/ext/pcntl/pcntl.c php-7.0.7/ext/pcntl/pcntl.c
 --- php-7.0.7.org/ext/pcntl/pcntl.c	2016-05-25 22:13:50.000000000 +0900
-+++ php-7.0.7/ext/pcntl/pcntl.c	2016-06-18 04:09:17.095889329 +0900
++++ php-7.0.7/ext/pcntl/pcntl.c	2017-01-07 01:19:02.475164531 +0900
 @@ -46,6 +46,9 @@
  
  #include <errno.h>
@@ -141,7 +141,7 @@ diff -urNp php-7.0.7.org/ext/pcntl/pcntl.c php-7.0.7/ext/pcntl/pcntl.c
  	RETURN_FALSE;
 diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
 --- php-7.0.7.org/ext/standard/exec.c	2016-05-25 22:14:08.000000000 +0900
-+++ php-7.0.7/ext/standard/exec.c	2016-06-18 04:09:17.096889383 +0900
++++ php-7.0.7/ext/standard/exec.c	2017-01-07 01:19:31.681765395 +0900
 @@ -96,7 +96,7 @@ PHPAPI int php_exec(int type, char *cmd,
  	char *buf;
  	size_t l = 0;
@@ -174,10 +174,138 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
  
  	stream = php_stream_fopen_from_pipe(fp, "rb");
  
-@@ -466,6 +470,363 @@ PHPAPI zend_string *php_escape_shell_arg
+@@ -466,6 +470,500 @@ PHPAPI zend_string *php_escape_shell_arg
  }
  /* }}} */
  
++/* {{{ +-- CmdArgv * cmdargv_init (void)
++ *
++ * memory allocation CmdArgv structure
++ */
++CmdArgv * cmdargv_init (void) {
++	CmdArgv * ret;
++
++	ret = emalloc (sizeof (CmdArgv) + 1);
++	ret->cmd  = NULL;
++	ret->clen = 0;
++	ret->argv = NULL;
++	ret->alen = 0;
++	ret->debug = 0;
++
++	return ret;
++}
++/* }}} */
++
++/* {{{ +-- void cmdargv_free (CmdArgv * v)
++ *
++ * memory free CmdArgv structure
++ */
++void cmdargv_free (CmdArgv * v) {
++	if ( v == NULL )
++		return;
++
++	if ( v->cmd != NULL )
++		efree (v->cmd);
++	if ( v->argv != NULL )
++		efree (v->argv);
++
++	efree (v);
++	v = NULL;
++}
++/* }}} */
++
++/* {{{ +-- CmdArgv make_cmdargv (char * cmd)
++ *
++ * saperate command and command arguments
++ */
++CmdArgv * make_cmdargv (char * cmd) {
++	int len = strlen (cmd);
++	int i   = 0;
++	char * path = cmd;
++	CmdArgv * ret = NULL;
++
++	//ret = cmdargv_init ();
++	ret = emalloc (sizeof (CmdArgv));
++	ret->cmd = NULL;
++	ret->clen = 0;
++	ret->argv = NULL;
++	ret->alen = 0;
++	ret->debug = 0;
++
++	// trim path
++	for ( i=0; i<len; i++ ) {
++		// 32 -> space, 9 -> tab
++		if ( cmd[i] == 32 || cmd[i] == 9 ) {
++			path = cmd + i + 1;
++			continue;
++		}
++		break;
++	}
++	len = strlen (path);
++
++	if ( strncmp ("DEBUG:", path, 6) == 0 ) {
++		ret->debug = 1;
++		path += 6;
++	} else if ( strncmp ("DDEBUG:", path, 7) == 0 ) {
++		ret->debug = 2;
++		path += 7;
++	}
++
++	// trim path again for DEBUG:
++	for ( i=0; i<len; i++ ) {
++		// 32 -> space, 9 -> tab
++		if ( path[i] == 32 || path[i] == 9 ) {
++			path += (i + 1);
++			continue;
++		}
++		break;
++	}
++	len = strlen (path);
++
++	if ( path[0] == '`' || (path[0] == '$' && path[1] == '(') ) {
++		ret->cmd  = estrdup (path);
++		ret->clen = strlen (path);
++
++		if ( ret->debug > 0 ) {
++			php_printf ("-- make_cmdargv ------\n");
++			php_printf ("Origianl : %s\n", cmd);
++			php_printf ("cmd      : %s (%d)\n", ret->cmd, ret->clen);
++			php_printf ("argv     : %s (%d)\n", ret->argv, ret->alen);
++			php_printf ("----------------------\n\n");
++		}
++
++		return ret;
++	}
++
++	for ( i=0; i<len; i++ ) {
++		// 32 -> space, 9 -> tab
++		if ( path[i] == 32 || path[i] == 9 || path[i] == ';' || path [i] == '|' || path[i] == '&' || path[i] == '>' ) {
++			// 92 -> back slash
++			if ( i == 0 || path[i-1] == 92 )
++				continue;
++
++			break;
++		}
++	}
++
++	ret->argv = estrdup (path + i);
++	*(path + i) = 0;
++	ret->alen = strlen (ret->argv);
++	ret->cmd  = estrdup (path);
++	ret->clen = strlen (path);
++
++	if ( ret->debug > 0 ) {
++		php_printf ("-- make_cmdargv ------\n");
++		php_printf ("Origianl : %s\n", cmd);
++		php_printf ("cmd      : %s (%d)\n", ret->cmd, ret->clen);
++		php_printf ("argv     : %s (%d)\n", ret->argv, ret->alen);
++		php_printf ("----------------------\n\n");
++	}
++
++	return ret;
++}
++/* }}} */
++
 +/* {{{ get_jailed_shell_cmd
 + */
 +char *get_jailed_shell_cmd (char *cmd) {
@@ -189,43 +317,32 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
 +	exec_len = strlen (exec_dir);
 +
 +	if ( exec_len ) {
-+		char *b = NULL, *c = NULL;
-+		char *tmp;
-+		char *__cmd;
-+		size_t c_len = 0;
++		CmdArgv * cp;
++		char * c = NULL;
++		char * tmp;
++		char * vcmd;
++		char * __cmd;
 +
-+		c = strchr (cmd, ' ');
-+		if ( c ) {
-+			c_len = strlen (c);
-+			*c = 0;
-+		}
++		cp = make_cmdargv (cmd);
 +
-+		//php_printf ("g --> %s : %s : %s : '%c'\n", c, b, exec_dir, PHP_DIR_SEPARATOR);
-+		//php_printf ("g ==> %s\n", cmd);
-+
-+		tmp = estrdup (cmd);
-+		b = strrchr (tmp, '/');
-+
-+		if ( c ) *c = ' ';
-+
-+		if ( b )
-+			c_len = sizeof (char *) * (strlen (b) + c_len + 1);
++		if ( cp->cmd[0] != '`' && cp->cmd[0] != '$' && (c = strrchr (cp->cmd, '/')) )
++			vcmd = c + 1;
 +		else
-+			c_len = sizeof (char *) * (strlen (tmp) + c_len + 1);
++			vcmd = cp->cmd;
 +
-+		__cmd = emalloc (c_len);
-+		memset (__cmd, 0, c_len);
-+		if ( c )
-+			sprintf (__cmd, "%s%s", b ? b : tmp, c);
-+		else {
-+			if ( b )
-+				memcpy (__cmd, b, strlen (b));
-+			else
-+				memcpy (__cmd, tmp, strlen (tmp));
-+		}
-+		efree (tmp);
++		__cmd = emalloc (sizeof (char) * (cp->clen + cp->alen + 7 + 1));
++		memset (__cmd, 0, sizeof (char) * (cp->clen + cp->alen + 7 + 1));
++
++		sprintf (
++				__cmd, "%s%s%s",
++				cp->debug == 1 ? "DEBUG:" : (cp->debug == 2 ? "DDEBUG:" : ""),
++				vcmd,
++				cp->alen ? cp->argv : ""
++				);
++
++		cmdargv_free (cp);
 +		_cmd = php_jailed_shell_cmd (__cmd, exec_dir);
-+
++		efree (__cmd);
 +	} else {
 +		_cmd = estrdup (cmd);
 +	}
@@ -308,6 +425,7 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
 +	char *_path, *_tpath;
 +	int _start;
 +	int debug = 0;
++	int bskip = 0;
 +	struct quote_value qv = { 0, 0, 0, 0, 0 };
 +	struct quote_chk_char qc;
 +
@@ -381,7 +499,8 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
 +	buf = emalloc (buf_len);
 +	memset (buf, 0, buf_len);
 +
-+	memcpy (buf, _path, path_len);
++	if ( _cmd[0] != ';' )
++		memcpy (buf, _path, path_len);
 +	ep = strlen (buf);
 +
 +	_len      = 0;
@@ -443,7 +562,12 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
 +					goto roopstart;
 +				}
 +
-+				memcpy (buf + ep, _cmd + _start, i - _start + 1);
++				if ( ! bskip )
++					memcpy (buf + ep, _cmd + _start, i - _start + 1);
++				else {
++					memset (buf + ep, _cmd[i], 1);
++					bskip = 0;
++				}
 +				_start = i + 1;
 +				ep = strlen (buf);
 +
@@ -462,8 +586,8 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
 +				}
 +
 +				// if not case of $() or && or ||, skip
-+				if ( _cmd[i] == '$' && _cmd[i+1] != '(' ) {
-+					i++;
++				if ( _cmd[i] == '$' && _cmd[i+1] != '(' && ! qv.daquote ) {
++					i += 2;
 +					goto roopstart;
 +				}
 +
@@ -498,6 +622,19 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
 +						char *_tvcmd = NULL;
 +
 +						for ( y=j; y<cmd_len; y++ ) {
++							// if path include backticks (/bin/`echo /bin/ls`)
++							//php_printf ("+ %c\n", _cmd[y]);
++							if ( (! qv.bquote && _cmd[y] == '`') || (! qv.daquote && _cmd[y] == '$' && _cmd[y+1] == '(') ) {
++								memcpy (buf + ep, path, path_len);
++								ep = strlen (buf);
++								memset (buf + ep, '/', 1);
++								ep++;
++								//php_printf ("~~~~~~~~~~~hel\n");
++								i = y;
++								bskip++;
++								goto roopstart;
++							}
++
 +							// blank ( ) => 32
 +							// tab (\t)  => 9
 +							if ( _cmd[y] == 32 || _cmd[y] == 9 || (qv.bquote && _cmd[y] == '`') ) {
@@ -538,7 +675,7 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
  /* {{{ proto string escapeshellcmd(string command)
     Escape shell metacharacters */
  PHP_FUNCTION(escapeshellcmd)
-@@ -518,20 +879,29 @@ PHP_FUNCTION(shell_exec)
+@@ -518,20 +1016,29 @@ PHP_FUNCTION(shell_exec)
  	char *command;
  	size_t command_len;
  	zend_string *ret;
@@ -573,8 +710,8 @@ diff -urNp php-7.0.7.org/ext/standard/exec.c php-7.0.7/ext/standard/exec.c
  	ret = php_stream_copy_to_mem(stream, PHP_STREAM_COPY_ALL, 0);
 diff -urNp php-7.0.7.org/ext/standard/exec.h php-7.0.7/ext/standard/exec.h
 --- php-7.0.7.org/ext/standard/exec.h	2016-05-25 22:14:08.000000000 +0900
-+++ php-7.0.7/ext/standard/exec.h	2016-06-18 04:09:17.097889438 +0900
-@@ -35,8 +35,25 @@ PHP_FUNCTION(proc_nice);
++++ php-7.0.7/ext/standard/exec.h	2017-01-07 01:19:31.682765450 +0900
+@@ -35,8 +35,33 @@ PHP_FUNCTION(proc_nice);
  PHP_MINIT_FUNCTION(proc_open);
  PHP_MINIT_FUNCTION(exec);
  
@@ -592,6 +729,14 @@ diff -urNp php-7.0.7.org/ext/standard/exec.h php-7.0.7/ext/standard/exec.h
 +	char acur;
 +};
 +
++typedef struct cmd_argv {
++	char * cmd;
++	int    clen;
++	char * argv;
++	int    alen;
++	int    debug;
++} CmdArgv;
++
  PHPAPI zend_string *php_escape_shell_cmd(char *);
  PHPAPI zend_string *php_escape_shell_arg(char *);
 +char *get_jailed_shell_cmd (char *);
@@ -602,7 +747,7 @@ diff -urNp php-7.0.7.org/ext/standard/exec.h php-7.0.7/ext/standard/exec.h
  #endif /* EXEC_H */
 diff -urNp php-7.0.7.org/ext/standard/file.c php-7.0.7/ext/standard/file.c
 --- php-7.0.7.org/ext/standard/file.c	2016-05-25 22:14:08.000000000 +0900
-+++ php-7.0.7/ext/standard/file.c	2016-06-18 04:09:17.098889492 +0900
++++ php-7.0.7/ext/standard/file.c	2017-01-07 01:19:02.477164640 +0900
 @@ -913,7 +913,7 @@ PHPAPI PHP_FUNCTION(fclose)
     Execute a command and open either a read or a write pipe to it */
  PHP_FUNCTION(popen)
@@ -638,7 +783,7 @@ diff -urNp php-7.0.7.org/ext/standard/file.c php-7.0.7/ext/standard/file.c
  		efree(posix_mode);
 diff -urNp php-7.0.7.org/ext/standard/proc_open.c php-7.0.7/ext/standard/proc_open.c
 --- php-7.0.7.org/ext/standard/proc_open.c	2016-05-25 22:14:08.000000000 +0900
-+++ php-7.0.7/ext/standard/proc_open.c	2016-06-18 04:09:17.098889492 +0900
++++ php-7.0.7/ext/standard/proc_open.c	2017-01-07 01:19:02.478164695 +0900
 @@ -423,7 +423,7 @@ struct php_proc_open_descriptor_item {
     Run a process with more control over it's file descriptors */
  PHP_FUNCTION(proc_open)
@@ -666,7 +811,7 @@ diff -urNp php-7.0.7.org/ext/standard/proc_open.c php-7.0.7/ext/standard/proc_op
  	if (other_options) {
 diff -urNp php-7.0.7.org/main/main.c php-7.0.7/main/main.c
 --- php-7.0.7.org/main/main.c	2016-05-25 22:14:22.000000000 +0900
-+++ php-7.0.7/main/main.c	2016-06-18 04:09:17.099889546 +0900
++++ php-7.0.7/main/main.c	2017-01-07 01:19:02.479164750 +0900
 @@ -471,6 +471,10 @@ PHP_INI_MH(OnChangeBrowscap);
   * PHP_INCLUDE_PATH
   */
@@ -688,7 +833,7 @@ diff -urNp php-7.0.7.org/main/main.c php-7.0.7/main/main.c
  	STD_PHP_INI_ENTRY("upload_max_filesize",	"2M",		PHP_INI_SYSTEM|PHP_INI_PERDIR,		OnUpdateLong,			upload_max_filesize,	php_core_globals,	core_globals)
 diff -urNp php-7.0.7.org/main/php_config.h.in php-7.0.7/main/php_config.h.in
 --- php-7.0.7.org/main/php_config.h.in	2016-05-25 22:14:22.000000000 +0900
-+++ php-7.0.7/main/php_config.h.in	2016-06-18 04:09:17.100889601 +0900
++++ php-7.0.7/main/php_config.h.in	2017-01-07 01:19:02.480164805 +0900
 @@ -2273,6 +2273,9 @@
  /* whether pwrite64 is default */
  #undef PHP_PWRITE_64
@@ -701,7 +846,7 @@ diff -urNp php-7.0.7.org/main/php_config.h.in php-7.0.7/main/php_config.h.in
  
 diff -urNp php-7.0.7.org/main/php_globals.h php-7.0.7/main/php_globals.h
 --- php-7.0.7.org/main/php_globals.h	2016-05-25 22:14:22.000000000 +0900
-+++ php-7.0.7/main/php_globals.h	2016-06-18 04:09:17.101889655 +0900
++++ php-7.0.7/main/php_globals.h	2017-01-07 01:19:02.480164805 +0900
 @@ -165,6 +165,8 @@ struct _php_core_globals {
  
  	zend_bool in_error_log;
@@ -713,7 +858,7 @@ diff -urNp php-7.0.7.org/main/php_globals.h php-7.0.7/main/php_globals.h
  #endif
 diff -urNp php-7.0.7.org/php.ini-development php-7.0.7/php.ini-development
 --- php-7.0.7.org/php.ini-development	2016-05-25 22:13:18.000000000 +0900
-+++ php-7.0.7/php.ini-development	2016-06-18 04:10:35.464148308 +0900
++++ php-7.0.7/php.ini-development	2017-01-07 01:19:02.481164860 +0900
 @@ -287,6 +287,11 @@ unserialize_callback_func =
  ; are decoded with unserialize, the data will remain the same.
  serialize_precision = 17
@@ -728,7 +873,7 @@ diff -urNp php-7.0.7.org/php.ini-development php-7.0.7/php.ini-development
  ; or per-virtualhost web server configuration file.
 diff -urNp php-7.0.7.org/php.ini-production php-7.0.7/php.ini-production
 --- php-7.0.7.org/php.ini-production	2016-05-25 22:13:18.000000000 +0900
-+++ php-7.0.7/php.ini-production	2016-06-18 04:10:39.793383584 +0900
++++ php-7.0.7/php.ini-production	2017-01-07 01:19:02.482164914 +0900
 @@ -287,6 +287,11 @@ unserialize_callback_func =
  ; are decoded with unserialize, the data will remain the same.
  serialize_precision = 17

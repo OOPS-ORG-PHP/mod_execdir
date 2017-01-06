@@ -1,6 +1,6 @@
 diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
 --- php-5.1.6.org/ext/standard/exec.c	2006-02-26 19:49:50.000000000 +0900
-+++ php-5.1.6/ext/standard/exec.c	2016-06-18 05:10:42.970230016 +0900
++++ php-5.1.6/ext/standard/exec.c	2017-01-07 00:50:32.962260311 +0900
 @@ -62,7 +62,7 @@ int php_exec(int type, char *cmd, zval *
  	FILE *fp;
  	char *buf, *tmp=NULL;
@@ -20,10 +20,138 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
  	}
  
  #if PHP_SIGCHILD
-@@ -368,6 +369,343 @@ char *php_escape_shell_arg(char *str) {
+@@ -368,6 +369,480 @@ char *php_escape_shell_arg(char *str) {
  }
  /* }}} */
  
++/* {{{ +-- CmdArgv * cmdargv_init (void)
++ *
++ * memory allocation CmdArgv structure
++ */
++CmdArgv * cmdargv_init (void) {
++	CmdArgv * ret;
++
++	ret = emalloc (sizeof (CmdArgv) + 1);
++	ret->cmd  = NULL;
++	ret->clen = 0;
++	ret->argv = NULL;
++	ret->alen = 0;
++	ret->debug = 0;
++
++	return ret;
++}
++/* }}} */
++
++/* {{{ +-- void cmdargv_free (CmdArgv * v)
++ *
++ * memory free CmdArgv structure
++ */
++void cmdargv_free (CmdArgv * v) {
++	if ( v == NULL )
++		return;
++
++	if ( v->cmd != NULL )
++		efree (v->cmd);
++	if ( v->argv != NULL )
++		efree (v->argv);
++
++	efree (v);
++	v = NULL;
++}
++/* }}} */
++
++/* {{{ +-- CmdArgv make_cmdargv (char * cmd)
++ *
++ * saperate command and command arguments
++ */
++CmdArgv * make_cmdargv (char * cmd) {
++	int len = strlen (cmd);
++	int i   = 0;
++	char * path = cmd;
++	CmdArgv * ret = NULL;
++
++	//ret = cmdargv_init ();
++	ret = emalloc (sizeof (CmdArgv));
++	ret->cmd = NULL;
++	ret->clen = 0;
++	ret->argv = NULL;
++	ret->alen = 0;
++	ret->debug = 0;
++
++	// trim path
++	for ( i=0; i<len; i++ ) {
++		// 32 -> space, 9 -> tab
++		if ( cmd[i] == 32 || cmd[i] == 9 ) {
++			path = cmd + i + 1;
++			continue;
++		}
++		break;
++	}
++	len = strlen (path);
++
++	if ( strncmp ("DEBUG:", path, 6) == 0 ) {
++		ret->debug = 1;
++		path += 6;
++	} else if ( strncmp ("DDEBUG:", path, 7) == 0 ) {
++		ret->debug = 2;
++		path += 7;
++	}
++
++	// trim path again for DEBUG:
++	for ( i=0; i<len; i++ ) {
++		// 32 -> space, 9 -> tab
++		if ( path[i] == 32 || path[i] == 9 ) {
++			path += (i + 1);
++			continue;
++		}
++		break;
++	}
++	len = strlen (path);
++
++	if ( path[0] == '`' || (path[0] == '$' && path[1] == '(') ) {
++		ret->cmd  = estrdup (path);
++		ret->clen = strlen (path);
++
++		if ( ret->debug > 0 ) {
++			php_printf ("-- make_cmdargv ------\n");
++			php_printf ("Origianl : %s\n", cmd);
++			php_printf ("cmd      : %s (%d)\n", ret->cmd, ret->clen);
++			php_printf ("argv     : %s (%d)\n", ret->argv, ret->alen);
++			php_printf ("----------------------\n\n");
++		}
++
++		return ret;
++	}
++
++	for ( i=0; i<len; i++ ) {
++		// 32 -> space, 9 -> tab
++		if ( path[i] == 32 || path[i] == 9 || path[i] == ';' || path [i] == '|' || path[i] == '&' || path[i] == '>' ) {
++			// 92 -> back slash
++			if ( i == 0 || path[i-1] == 92 )
++				continue;
++
++			break;
++		}
++	}
++
++	ret->argv = estrdup (path + i);
++	*(path + i) = 0;
++	ret->alen = strlen (ret->argv);
++	ret->cmd  = estrdup (path);
++	ret->clen = strlen (path);
++
++	if ( ret->debug > 0 ) {
++		php_printf ("-- make_cmdargv ------\n");
++		php_printf ("Origianl : %s\n", cmd);
++		php_printf ("cmd      : %s (%d)\n", ret->cmd, ret->clen);
++		php_printf ("argv     : %s (%d)\n", ret->argv, ret->alen);
++		php_printf ("----------------------\n\n");
++	}
++
++	return ret;
++}
++/* }}} */
++
 +/* {{{ get_jailed_shell_cmd
 + */
 +char *get_jailed_shell_cmd (char *cmd) {
@@ -33,43 +161,32 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
 +	exec_len = strlen (PG(safe_mode_exec_dir));
 +
 +	if ( exec_len ) {
-+		char *b = NULL, *c = NULL;
-+		char *tmp;
-+		char *__cmd;
-+		size_t c_len = 0;
++		CmdArgv * cp;
++		char * c = NULL;
++		char * tmp;
++		char * vcmd;
++		char * __cmd;
 +
-+		c = strchr (cmd, ' ');
-+		if ( c ) {
-+			c_len = strlen (c);
-+			*c = 0;
-+		}
++		cp = make_cmdargv (cmd);
 +
-+		//php_printf ("g --> %s : %s : %s : '%c'\n", c, b, PG(safe_mode_exec_dir), PHP_DIR_SEPARATOR);
-+		//php_printf ("g ==> %s\n", cmd);
-+
-+		tmp = estrdup (cmd);
-+		b = strrchr (tmp, '/');
-+
-+		if ( c ) *c = ' ';
-+
-+		if ( b )
-+			c_len = sizeof (char *) * (strlen (b) + c_len + 1);
++		if ( cp->cmd[0] != '`' && cp->cmd[0] != '$' && (c = strrchr (cp->cmd, '/')) )
++			vcmd = c + 1;
 +		else
-+			c_len = sizeof (char *) * (strlen (tmp) + c_len + 1);
++			vcmd = cp->cmd;
 +
-+		__cmd = emalloc (c_len);
-+		memset (__cmd, 0, c_len);
-+		if ( c )
-+			sprintf (__cmd, "%s%s", b ? b : tmp, c);
-+		else {
-+			if ( b )
-+				memcpy (__cmd, b, strlen (b));
-+			else
-+				memcpy (__cmd, tmp, strlen (tmp));
-+		}
-+		efree (tmp);
++		__cmd = emalloc (sizeof (char) * (cp->clen + cp->alen + 7 + 1));
++		memset (__cmd, 0, sizeof (char) * (cp->clen + cp->alen + 7 + 1));
++
++		sprintf (
++				__cmd, "%s%s%s",
++				cp->debug == 1 ? "DEBUG:" : (cp->debug == 2 ? "DDEBUG:" : ""),
++				vcmd,
++				cp->alen ? cp->argv : ""
++				);
++
++		cmdargv_free (cp);
 +		_cmd = php_jailed_shell_cmd (__cmd, PG(safe_mode_exec_dir));
-+
++		efree (__cmd);
 +	} else {
 +		_cmd = estrdup (cmd);
 +	}
@@ -151,6 +268,7 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
 +	char *_cmd, *x_cmd, *debug_cmd;
 +	char *_path, *_tpath;
 +	int _start;
++	int bskip = 0;
 +	int debug = 0;
 +	struct quote_value qv = { 0, 0, 0, 0, 0 };
 +	struct quote_chk_char qc;
@@ -207,7 +325,8 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
 +	buf = emalloc (buf_len);
 +	memset (buf, 0, buf_len);
 +
-+	memcpy (buf, _path, path_len);
++	if ( _cmd[0] != ';' )
++		memcpy (buf, _path, path_len);
 +	ep = strlen (buf);
 +
 +	_len      = 0;
@@ -269,7 +388,12 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
 +					goto roopstart;
 +				}
 +
-+				memcpy (buf + ep, _cmd + _start, i - _start + 1);
++				if ( ! bskip )
++					memcpy (buf + ep, _cmd + _start, i - _start + 1);
++				else {
++					memset (buf + ep, _cmd[i], 1);
++					bskip = 0;
++				}
 +				_start = i + 1;
 +				ep = strlen (buf);
 +
@@ -288,8 +412,8 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
 +				}
 +
 +				// if not case of $() or && or ||, skip
-+				if ( _cmd[i] == '$' && _cmd[i+1] != '(' ) {
-+					i++;
++				if ( _cmd[i] == '$' && _cmd[i+1] != '(' && ! qv.daquote ) {
++					i+=2;
 +					goto roopstart;
 +				}
 +
@@ -324,6 +448,19 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
 +						char *_tvcmd = NULL;
 +
 +						for ( y=j; y<cmd_len; y++ ) {
++							// if path include backticks (/bin/`echo /bin/ls`)
++							//php_printf ("+ %c\n", _cmd[y]);
++							if ( (! qv.bquote && _cmd[y] == '`') || (! qv.daquote && _cmd[y] == '$' && _cmd[y+1] == '(') ) {
++								memcpy (buf + ep, path, path_len);
++								ep = strlen (buf);
++								memset (buf + ep, '/', 1);
++								ep++;
++								//php_printf ("~~~~~~~~~~~hel\n");
++								i = y;
++								bskip++;
++								goto roopstart;
++							}
++
 +							// blank ( ) => 32
 +							// tab (\t)  => 9
 +							if ( _cmd[y] == 32 || _cmd[y] == 9 || (qv.bquote && _cmd[y] == '`') ) {
@@ -364,7 +501,7 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
  /* {{{ proto string escapeshellcmd(string command)
     Escape shell metacharacters */
  PHP_FUNCTION(escapeshellcmd)
-@@ -416,6 +754,7 @@ PHP_FUNCTION(shell_exec)
+@@ -416,6 +891,7 @@ PHP_FUNCTION(shell_exec)
  	size_t total_readbytes;
  	zval **cmd;
  	char *ret;
@@ -372,7 +509,7 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
  	php_stream *stream;
  
  	if (ZEND_NUM_ARGS()!=1 || zend_get_parameters_ex(1, &cmd)==FAILURE) {
-@@ -428,14 +767,17 @@ PHP_FUNCTION(shell_exec)
+@@ -428,14 +904,17 @@ PHP_FUNCTION(shell_exec)
  	}
  
  	convert_to_string_ex(cmd);
@@ -395,8 +532,8 @@ diff -urNp php-5.1.6.org/ext/standard/exec.c php-5.1.6/ext/standard/exec.c
  	total_readbytes = php_stream_copy_to_mem(stream, &ret, PHP_STREAM_COPY_ALL, 0);
 diff -urNp php-5.1.6.org/ext/standard/exec.h php-5.1.6/ext/standard/exec.h
 --- php-5.1.6.org/ext/standard/exec.h	2006-01-01 21:50:14.000000000 +0900
-+++ php-5.1.6/ext/standard/exec.h	2016-06-18 05:10:42.970230016 +0900
-@@ -34,8 +34,25 @@ PHP_FUNCTION(proc_terminate);
++++ php-5.1.6/ext/standard/exec.h	2017-01-07 00:50:32.963260366 +0900
+@@ -34,8 +34,33 @@ PHP_FUNCTION(proc_terminate);
  PHP_FUNCTION(proc_nice);
  PHP_MINIT_FUNCTION(proc_open);
  
@@ -414,6 +551,14 @@ diff -urNp php-5.1.6.org/ext/standard/exec.h php-5.1.6/ext/standard/exec.h
 +	char acur;
 +};
 +
++typedef struct cmd_argv {
++	char * cmd;
++	int    clen;
++	char * argv;
++	int    alen;
++	int    debug;
++} CmdArgv;
++
  PHPAPI char *php_escape_shell_cmd(char *);
  PHPAPI char *php_escape_shell_arg(char *);
 +char *get_jailed_shell_cmd (char *);
@@ -424,7 +569,7 @@ diff -urNp php-5.1.6.org/ext/standard/exec.h php-5.1.6/ext/standard/exec.h
  #endif /* EXEC_H */
 diff -urNp php-5.1.6.org/ext/standard/file.c php-5.1.6/ext/standard/file.c
 --- php-5.1.6.org/ext/standard/file.c	2006-04-06 11:39:55.000000000 +0900
-+++ php-5.1.6/ext/standard/file.c	2016-06-18 05:10:42.971230070 +0900
++++ php-5.1.6/ext/standard/file.c	2017-01-07 00:50:05.989771630 +0900
 @@ -940,7 +940,10 @@ PHP_FUNCTION(popen)
  		efree(buf);
  
@@ -439,7 +584,7 @@ diff -urNp php-5.1.6.org/ext/standard/file.c php-5.1.6/ext/standard/file.c
  			efree(p);
 diff -urNp php-5.1.6.org/ext/standard/proc_open.c php-5.1.6/ext/standard/proc_open.c
 --- php-5.1.6.org/ext/standard/proc_open.c	2006-01-01 21:50:15.000000000 +0900
-+++ php-5.1.6/ext/standard/proc_open.c	2016-06-18 05:10:42.972230125 +0900
++++ php-5.1.6/ext/standard/proc_open.c	2017-01-07 00:50:05.990771685 +0900
 @@ -252,7 +252,8 @@ static int php_make_safe_mode_command(ch
  	char *space, *sep, *arg0;
  
