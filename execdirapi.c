@@ -219,8 +219,6 @@ PHPAPI char * get_jailed_shell_cmd (char * cmd) {
 		_cmd = estrdup (cmd);
 	}
 
-	//php_printf ("g **> %s\n", _cmd);
-
 	return _cmd;
 }
 /* }}} */
@@ -465,7 +463,7 @@ roopstart:
 
 				// if not case of $() or && or ||, skip
 				if ( _cmd[i] == '$' && _cmd[i+1] != '(' && ! qv.daquote ) {
-					i+=2;
+					i += 2;
 					goto roopstart;
 				}
 
@@ -500,13 +498,11 @@ roopstart:
 
 						for ( y=j; y<cmd_len; y++ ) {
 							// if path include backticks (/bin/`echo /bin/ls`)
-							//php_printf ("+ %c\n", _cmd[y]);
 							if ( (! qv.bquote && _cmd[y] == '`') || (! qv.daquote && _cmd[y] == '$' && _cmd[y+1] == '(') ) {
 								memcpy (buf + ep, path, path_len);
 								ep = strlen (buf);
 								memset (buf + ep, '/', 1);
 								ep++;
-								//php_printf ("~~~~~~~~~~~hel\n");
 								i = y;
 								bskip++;
 								goto roopstart;
@@ -521,22 +517,15 @@ roopstart:
 									_vcmd_len = strlen (_vcmd);
 									i = y;
 
-									//php_printf ("11***** => %s : %s, %d, %d\n", vcmd, _vcmd, qv.bquote, i);
 									if ( _cmd[y] == '`' )
 										 qv.bquote = 0;
-									//php_printf ("11***** => %s : %s, %d, %d\n", vcmd, _vcmd, qv.bquote, i);
 
 									break;
 							}
 						}
 
-						//php_printf ("!!!!!!!!!! ---> %d\n", ep);
-						//php_printf ("!!!!!!!!!! ---> %s\n", buf);
-						//php_printf ("!!!!!!!!!! ---> %s\n", _vcmd);
-
 						memcpy (buf + ep, _path, path_len);
 						memcpy (buf + ep + path_len, _vcmd, _vcmd_len);
-						//php_printf ("*********** -> %s\n", buf);
 						ep += (path_len + _vcmd_len);
 						_start = i;
 						break;
