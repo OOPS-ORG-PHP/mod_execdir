@@ -16,7 +16,7 @@ diff -urNp php-4.4.9.org/ext/standard/exec.c php-4.4.9/ext/standard/exec.c
  	int t, l, output=1;
  	int overflow_limit, lcmd, ldir;
 -	char *b, *c, *d=NULL;
-+	char *b=NULL, *c, *jcmd=NULL;
++	char *b=NULL, *c, *d=NULL, *jcmd=NULL;
  	php_stream *stream = NULL;
  	int pclose_return = 0;
  #if PHP_SIGCHILD
