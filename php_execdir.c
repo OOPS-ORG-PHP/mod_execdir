@@ -344,10 +344,7 @@ PHP_MINIT_FUNCTION (execdir)
 		}
 	} else {
 		/* not registered yet, then simply use the API */
-		zend_register_ini_entries (
-			(zend_ini_entry_def *) &ini_entries,
-			module_number TSRMLS_CC
-		);
+		REGISTER_INI_ENTRIES ();
 	}
 
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
@@ -403,6 +400,8 @@ PHP_MINFO_FUNCTION (execdir)
 	php_info_print_table_row (2, "Build version", EXECDIR_EXT_VERSION);
 	php_info_print_table_row (2, "Default Exec DIR", PHP_EXECDIR);
 	php_info_print_table_end ();
+
+	DISPLAY_INI_ENTRIES ();
 }
 /* }}} */
 
