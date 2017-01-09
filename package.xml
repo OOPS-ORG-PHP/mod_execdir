@@ -28,6 +28,7 @@
 	<notes>
 		- fixed #9 can't print debug message
 		- print value of mod_execdir ini option on phpinfo() entry
+		- fixed #11 When safe_mode enabled, wrong operation shell_exec function in php 5.3 and before
 	</notes>
 	<contents>
 		<dir name="/">
@@ -82,6 +83,7 @@
 			<notes>
 				- fixed #9 can't print debug message
 				- print value of mod_execdir ini option on phpinfo() entry
+				- fixed #11 When safe_mode enabled, wrong operation shell_exec function in php 5.3 and before
 			</notes>
 		</release>
 		<release>

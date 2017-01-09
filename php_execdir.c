@@ -451,6 +451,13 @@ PHP_FUNCTION (shell_exec_re)
 		return;
 	}
 
+#if PHP_VERSION_ID < 50400
+	if ( PG (safe_mode) ) {
+		php_error_docref (NULL TSRMLS_CC, E_WARNING, "Cannot execute using backquotes in Safe Mode");
+		RETURN_FALSE;
+	}
+#endif
+
 	if ( ! command_len ) {
 		php_error_docref (NULL TSRMLS_CC, E_WARNING, "Cannot execute a blank command");
 		RETURN_FALSE;
