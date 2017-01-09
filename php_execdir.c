@@ -530,8 +530,8 @@ PHP_FUNCTION (popen_re)
 	posix_mode = estrndup (mode, mode_len);
 #ifndef PHP_WIN32
 	{
-		char *z = memchr (posix_mode, 'b', mode_len);
-		if (z) {
+		char * z = memchr (posix_mode, 'b', mode_len);
+		if ( z ) {
 			memmove (z, z + 1, mode_len - (z - posix_mode));
 		}
 	}
@@ -541,23 +541,23 @@ PHP_FUNCTION (popen_re)
 	{
 		char *b, *buf = 0, *tmp;
 
-		if (PG (safe_mode)){
+		if ( PG (safe_mode) ) {
 			b = strchr (command, ' ');
-			if (!b) {
+			if ( ! b ) {
 				b = strrchr (command, '/');
 			} else {
-				char *c;
+				char * c;
 
 				c = command;
-				while ((*b != '/') && (b != c)) {
+				while ( (*b != '/') && (b != c) ) {
 					b--;
 				}
-				if (b == c) {
+				if ( b == c ) {
 					b = NULL;
 				}
 			}
 
-			if (b) {
+			if ( b ) {
 				spprintf (&buf, 0, "%s%s", PG (safe_mode_exec_dir), b);
 			} else {
 				spprintf (&buf, 0, "%s/%s", PG (safe_mode_exec_dir), command);
@@ -567,7 +567,7 @@ PHP_FUNCTION (popen_re)
 			fp = VCWD_POPEN (tmp, posix_mode);
 			efree (tmp);
 
-			if (!fp) {
+			if ( ! fp ) {
 				php_error_docref2 (NULL TSRMLS_CC, buf, posix_mode, E_WARNING, "%s", strerror (errno));
 				efree (posix_mode);
 				efree (buf);
@@ -579,7 +579,7 @@ PHP_FUNCTION (popen_re)
 		} else {
 			jcommand = get_jailed_shell_cmd (command);
 			fp = VCWD_POPEN (jcommand, posix_mode);
-			if (!fp) {
+			if ( ! fp ) {
 				php_error_docref2 (NULL TSRMLS_CC, command, posix_mode, E_WARNING, "%s", strerror (errno));
 				efree (posix_mode);
 				RETURN_FALSE;
