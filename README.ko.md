@@ -77,7 +77,7 @@ extension = execdir.so
 
 이 모듈은 기존의 system 함수들을 바꿔치기 하는 것이므로, 가장 마지막에 로딩되도록 추가해 줍니다.
 
-#### 4.1.1 ini 설정
+#### 4.1.2 ini 설정
 
 ***exec_dir*** 옵션을 이용하여, jail 시킬 디렉토리를 지정할 수 있습니다.
 
@@ -106,7 +106,7 @@ exec_dir = /var/lib/php/bin
 exec_dir =
 ```
 
-### 4.1.2 Apache VirtualHost
+#### 4.1.3 Apache VirtualHost
 
 ***PHP***를 ***apache module***로 사용할 경우 ***php_admin_value*** 지시자를 이용하여 가상 호스트마다 설정을 다르게 할 수 있습니다.
 ```apache
@@ -133,7 +133,7 @@ exec_dir =
 
 ***exec_dir*** 옵션은 ***PHP_INI_SYSTEM***으로 할당이 되어 있기 때문에, ***.htaccess*** 에서는 사용이 불가능 합니다.
 
-### 4.1.3 PHP FPM pool
+#### 4.1.4 PHP FPM pool
 
 ***PHP***를 ***fpm*** 모드로 사용할 경우에는, FPM pool 별로 설정이 가능 합니다.
 
