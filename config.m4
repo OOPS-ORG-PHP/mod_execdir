@@ -1,4 +1,3 @@
-dnl $Id: $
 dnl config.m4 for extension execdir
 
 PHP_ARG_WITH(execdir, for execdir support,

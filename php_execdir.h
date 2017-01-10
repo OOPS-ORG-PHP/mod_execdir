@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | mod_exec v1                                                          |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1999-2016 JoungKyun.Kim                                |
+  | Copyright (c) 1999-2017 JoungKyun.Kim                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.0 of the PHP license,       |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -14,8 +14,6 @@
   +----------------------------------------------------------------------+
   | Author: JoungKyun.Kim <http://oops.org>                              |
   +----------------------------------------------------------------------+
-
-  $Id: $
 */
 
 #ifndef PHP_EXECDIR_H

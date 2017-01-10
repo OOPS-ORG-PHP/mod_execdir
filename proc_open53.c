@@ -14,7 +14,7 @@
    +----------------------------------------------------------------------+
    | Author: Wez Furlong <wez@thebrainroom.com>                           |
    | Jailed: JoungKyun.Kim <http://oops.org>                              |
-   |         This source is PHP-5.3 branch (2016-06-19)                   |
+   |         This source is PHP-5.3 branch (2017-06-19)                   |
    |         a2045ff3320a7d037f198558c934b885f67fc00e                     |
    +----------------------------------------------------------------------+
  */
