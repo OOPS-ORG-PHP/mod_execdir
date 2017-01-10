@@ -17,19 +17,16 @@
 	<date>2017-01-10</date>
 	<time>18:25:37</time>
 	<version>
-		<release>1.0.1</release>
+		<release>1.0.2</release>
 		<api>1.0.0</api>
 	</version>
 	<stability>
-		<release>stable</release>
+		<release>beta</release>
 		<api>stable</api>
 	</stability>
 	<license uri="http://www.php.net/license">PHP</license>
 	<notes>
-		- fixed #8 backquote and $() syntax weakness after semi colon
-		- fixed #9 can't print debug message
-		- print value of mod_execdir ini option on phpinfo() entry
-		- fixed #11 When safe_mode enabled, wrong operation shell_exec function in php 5.3 and before
+
 	</notes>
 	<contents>
 		<dir name="/">
@@ -77,6 +74,14 @@
 	</dependencies>
 	<providesextension>execdir</providesextension>
 	<changelog>
+		<release>
+			<stability><release>beta</release><api>stable</api></stability>
+			<version><release>1.0.2</release><api>1.0.0</api></version>
+			<date>2017-01-10</date>
+			<notes>
+
+			</notes>
+		</release>
 		<release>
 			<stability><release>stable</release><api>stable</api></stability>
 			<version><release>1.0.1</release><api>1.0.0</api></version>
