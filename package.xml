@@ -14,14 +14,14 @@
 		<email>joungkyun@daum.net</email>
 		<active>yes</active>
 	</lead>
-	<date>2017-01-06</date>
-	<time>04:10:22</time>
+	<date>2017-01-10</date>
+	<time>18:25:37</time>
 	<version>
 		<release>1.0.1</release>
 		<api>1.0.0</api>
 	</version>
 	<stability>
-		<release>beta</release>
+		<release>stable</release>
 		<api>stable</api>
 	</stability>
 	<license uri="http://www.php.net/license">PHP</license>
@@ -78,9 +78,9 @@
 	<providesextension>execdir</providesextension>
 	<changelog>
 		<release>
-			<stability><release>beta</release><api>stable</api></stability>
+			<stability><release>stable</release><api>stable</api></stability>
 			<version><release>1.0.1</release><api>1.0.0</api></version>
-			<date>2017-01-06</date>
+			<date>2017-01-10</date>
 			<notes>
 				- fixed #8 backquote and $() syntax weakness after semi colon
 				- fixed #9 can't print debug message
