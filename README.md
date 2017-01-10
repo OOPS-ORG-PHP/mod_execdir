@@ -2,13 +2,13 @@ PHP execdir extension
 ===
 [![PHP license](https://img.shields.io/badge/license-PHP-blue.svg)](https://raw.githubusercontent.com/php/php-src/master/LICENSE) [![GitHub issues](https://img.shields.io/github/issues/OOPS-ORG-PHP/mod_execdir.svg)](https://github.com/OOPS-ORG-PHP/mod_execdir/issues) [![GitHub forks](https://img.shields.io/github/forks/OOPS-ORG-PHP/mod_execdir.svg)](https://github.com/OOPS-ORG-PHP/mod_execdir/network) [![GitHub stars](https://img.shields.io/github/stars/OOPS-ORG-PHP/mod_execdir.svg)](https://github.com/OOPS-ORG-PHP/mod_execdir/stargazers)
 
-## License
+## 1. License
 
 Copyright (c) 2016 JoungKyun.Kim &lt;http://oops.org&gt; All rights reserved.
 
 This program is under ***PHP License***.
 
-## Description
+## 2. Description
 
 If you use ***mod_execdir*** extension, you can run only the shell command in the specified directory. And this means that possible to ***fundamentally protect*** the web shell and system shell injection attacks.
 
@@ -29,11 +29,12 @@ This feature is provided as the source patch or php dynamic extension, and affec
   * popen
   * proc_open
   * pcntl_exec
+  * shell_exec
   * backtick operator
 
-## Installation
+## 3. Installation
 
-### 1. Requirement
+### 3.1. Requirement
 
 Over PHP 5 and PHP 7. But, it is tested on PHP 5.1 and after.
 
@@ -48,22 +49,12 @@ For this features, we support 2 building method.
     * if failed call ***pcntl_exec***, can not use ***pcntl_get_last_error*** function. Need to modify your code.
 
 
-### 2. PHP source patch
+### 3.2. PHP source patch
 
-First, download patch file that matches PHP version. If it does not exsits, download latest version of the patch file. This means that no problem to use previous version of the patch file or does not yet support.
-
-And execute configure with ***--with-exec-dir*** option.
-
-```shell
-[root@host ~]$ cd php-7.1.0
-[root@host php-7.1.0]$ wget https://raw.githubusercontent.com/OOPS-ORG-PHP/mod_execdir/master/patches/php-7.1.0-execdir.patch
-[root@host php-7.1.0]$ patch -p1 < ./php-7.1.0-execdir.patch
-[root@host php-7.1.0]$ ./configure --with-exec-dir=/var/lib/php/bin ... (and with other options)
-[root@host php-7.1.0]$ make && make install
-```
+This feature can be used as a PHP extension, or you can patch it directly to the PHP source. If you prefer to patch your PHP directly rather than using it as an extension, see the [description of the patch file(https://github.com/OOPS-ORG-PHP/mod_execdir/blob/master/README.md).
 
 
-### 3. mod_execdir dynamic extension
+### 3.3. mod_execdir dynamic extension
 
 ```shell
 [root@host mod_execdir]$ phpize
@@ -72,13 +63,15 @@ And execute configure with ***--with-exec-dir*** option.
 [root@host mod_execdir]$ make install
 ```
 
-## Usage
+At ***configure*** time, you can use the ***--with-execdir*** option to specify the default directory for jail
 
-### 1. Configuraions
+## 4. Usage
 
-Add follow configuration in th php.ini.
+### 4.1. Configuraions
 
-If you as with php extension(***mod_execdir***), you must regist execdir extension.
+#### 4.1.1 module loading
+
+If build with PHP dynamic extension, you will need to load ***execdir.so*** file in ***php.ini***. Add follow configuration in th php.ini.
 
 ```ini
 extension = execdir.so
@@ -86,21 +79,78 @@ extension = execdir.so
 
 This extension replaces the existing functions, so it is recommended that you last loaded.
 
+#### 4.1.2 ini settings
 
 Add directory for restricted shell command.
 
 ```ini
-exec_dir   = /var/lib/php/bin
+; only executables located in the exec_dir will be allowed to be executed
+; via the exec family of functions. This is only AnNyung LInux patch
+; see also https://github.com/OOPS-ORG-PHP/mod_execdir/
+exec_dir = /var/lib/php/bin
 ```
 
-If you patched source code PHP 5.3 and before, you must use "***safe_mode_exec_dir***" option instead of "***exec_dir***"
+If the ***exec_dir*** option is not set as follows, the ***--with-execdir*** value that specified at the ***configure*** time is used. If you did not provied the ***--with-execdir*** option at the ***configure*** time, then tme value of ***exec_dir*** will be empty.
 
 ```ini
-; This case, PHP 5.3 and before with patched PHP source code
-safe_mode_exec_dir = /var/lib/php/bin
+; only executables located in the exec_dir will be allowed to be executed
+; via the exec family of functions. This is only AnNyung LInux patch
+; see also https://github.com/OOPS-ORG-PHP/mod_execdir/
+;exec_dir =
 ```
 
-### 2. Command parser format
+If you do not want to restrict, you have to specify an empty value like this:
+
+```ini
+; only executables located in the exec_dir will be allowed to be executed
+; via the exec family of functions. This is only AnNyung LInux patch
+; see also https://github.com/OOPS-ORG-PHP/mod_execdir/
+exec_dir =
+```
+
+#### 4.1.3 Settings per Apache VirtualHost
+
+If you use PHP as an ***apache module***, you can use the ***php_admin_value*** directive to make different settings for each ***virtual host***.
+
+```apache
+<VirtualHost *:80>
+    ServerName domain.com
+    DocumentRoot /var/www/domain.com
+
+    <IfModule php7_module>
+        php_admin_flag exec_dir /var/php/domain.com/bin
+    </IfModule>
+</VirtualHost>
+
+<VirtualHost *:80>
+    ServerName domain-other.com
+    DocumentRoot /var/www/domain-other.com
+
+    <IfModule php7_module>
+        php_admin_flag exec_dir /var/php/domain-other.com/bin
+    </IfModule>
+</VirtualHost>
+```
+
+This setting can be applied in ```<Directory>```, ```<Location>``` and other blocks.
+
+The ***exec_dir*** option is assigned to ***PHP_INI_SYSTEM***, so it can not be used with ***.htaccess***.
+
+
+#### 4.1.4 Settgins per PHP FPM pool
+
+If you use PHP as fpm mode, you can set different for each FPM pool.
+
+```ini
+[www]
+php_admin_flag[exec_dir] = /var/php/pool/www/bin
+
+[www1]
+php_admin_flag[exec_dir] = /var/php/pool/www1/bin
+```
+
+
+### 4.2. Command parser format
 
 Supported formats are as follows:
 
@@ -142,11 +192,11 @@ exec ("/var/lib/php/bin/echo '$(ls -l | grep abc)' | /var/lib/php/bin/grep abc")
 exec ('/var/lib/php/bin/echo "$(/var/lib/php/bin/ls -l | /var/lib/php/bin/grep abc)" | /var/lib/php/bin/grep abc');
 ```
 
-### 3. APIs
+### 4.3. APIs
 
 The following case is applied with building in mod_execdir as PHP dynamic extension.
 
-#### 1. Original functions
+#### 4.3.1. Original functions
 
 You can call original functions with "***_orig***" postfix.
 
@@ -169,7 +219,7 @@ The list of original functions is follow:
   * proc_terminate_orig
   * proc_get_status_orig
 
-### 2. mod_execdir APIs
+#### 4.3.2. mod_execdir APIs
 
   * ***exec_re*** : mapping ***exec*** function
   * ***system_re*** : mapping ***system*** function
@@ -212,5 +262,5 @@ The list of original functions is follow:
   ?>
   ```
 
-## Contributors
+## 5. Contributors
 JoungKyun.Kim
