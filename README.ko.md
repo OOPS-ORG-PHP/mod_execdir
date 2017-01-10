@@ -2,13 +2,13 @@ PHP execdir extension
 ===
 [![PHP license](https://img.shields.io/badge/license-PHP-blue.svg)](https://raw.githubusercontent.com/php/php-src/master/LICENSE) [![GitHub issues](https://img.shields.io/github/issues/OOPS-ORG-PHP/mod_execdir.svg)](https://github.com/OOPS-ORG-PHP/mod_execdir/issues) [![GitHub forks](https://img.shields.io/github/forks/OOPS-ORG-PHP/mod_execdir.svg)](https://github.com/OOPS-ORG-PHP/mod_execdir/network) [![GitHub stars](https://img.shields.io/github/stars/OOPS-ORG-PHP/mod_execdir.svg)](https://github.com/OOPS-ORG-PHP/mod_execdir/stargazers)
 
-## License
+## 1. License
 
 Copyright (c) 2016 JoungKyun.Kim &lt;http://oops.org&gt; All rights reserved.
 
 This program is under PHP License.
 
-##Description
+## 2. Description
 
 ***mod_execdir*** 확장은 특정 디렉토리에 있는 명령만 실행할 수 있도록 제한을 하여, web shell이나 system shell injection 공격을 <u>원천적으로 방어</u>할 수 있습니다.
 
@@ -29,11 +29,12 @@ execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하�
   * popen
   * proc_open
   * pcntl_exec
+  * shell_exec
   * backtick operator
 
-## Installation
+## 3. Installation
 
-### 1. Requirement
+### 3.1. Requirement
 
 PHP 5 와 PHP 7 이상에서 사용이 가능합니다.
 
@@ -49,19 +50,11 @@ PHP 확장 모듈의 경우, PHP 5 호환 코드로 작성 하였지만, 실제 
     * ***pcntl_exec*** call 실패 시에, pcntl_get_last_error() 함수 사용을 못함. 코드 수정이 필요 함.
 
 
-### 2. PHP source 에 직접 patch를 하는 경우
+### 3.2. PHP source 에 직접 patch를 하는 경우
 
-mod_execdir/patches 디렉토리에서 빌드할 PHP 버전에 맞는 patch 파일을 다운도르 합니다. 현재 빌드하려는 버전이 없을 경우에는 가장 최신의 버전을 다운로드 받으십시오. 이 의미는 이전 버전 패치가 문제가 없거나 또는 아직 지원을 하지 않을 수도 있음을 의미 합니다. 여기서는 PHP 7.0.7을 예로 듭니다.
+이 기능은 확장 모듈로서 사용을 할 수도 있고, PHP 소스에 직접 패치를 할 수도 있습니다. 확장 기능으로 사용하는 것 보다 PHP에 직접 패치를 해서 사용하는 것을 선호 한다면, [Patch 파일에 대한 설명](https://github.com/OOPS-ORG-PHP/mod_execdir/blob/master/patches/README.ko.md)을 참조 하십시오.
 
-```shell
-[root@host ~]$ cd php-7.0.7
-[root@host php-7.0.7]$ wget https://raw.githubusercontent.com/OOPS-ORG-PHP/mod_execdir/master/patches/php-7.0.7-execdir.patch
-[root@host php-7.0.7]$ patch -p1 < ./php-7.0.7-execdir.patch
-[root@host php-7.0.7]$ ./configure --with-exec-dir=/var/lib/php/bin ... (and with other options)
-[root@host php-7.0.7]$ make && make install
-```
-
-### 3. 동적 확장으로 사용할 경우
+### 3.3. 동적 확장으로 사용할 경우
 
 ```shell
 [root@host mod_execdir]$ phpize
@@ -70,13 +63,15 @@ mod_execdir/patches 디렉토리에서 빌드할 PHP 버전에 맞는 patch 파�
 [root@host mod_execdir]$ make install
 ```
 
-## Usage
+***configure***시에 ***--with-execdir*** 옵션을 이용하여 jail을 시킬 기본 디렉토리를 지정할 수 있습니다.
 
-### 1. 설정
+## 4.Usage
 
-php.ini에 다음의 설정을 추가 합니다.
+### 4.1. 설정
 
-php 동적 확장으로 빌드를 했을 경우에는 execdir.so 를 php.ini에서 로딩해 줘야 합니다.
+#### 4.1.1 module loading
+
+php.ini에 다음의 설정을 추가 합니다. php 동적 확장으로 빌드를 했을 경우에는 execdir.so 를 php.ini에서 로딩해 줘야 합니다.
 
 ```ini
 extension = execdir.so
@@ -84,20 +79,75 @@ extension = execdir.so
 
 이 모듈은 기존의 system 함수들을 바꿔치기 하는 것이므로, 가장 마지막에 로딩되도록 추가해 줍니다.
 
-실행할 수 있는 쉘 실행 파일이 있는 디렉토리를 지정합니다.
+#### 4.1.1 ini 설정
+
+***exec_dir*** 옵션을 이용하여, jail 시킬 디렉토리를 지정할 수 있습니다.
 
 ```ini
-exe_cdir   = /var/lib/php/bin
+; only executables located in the exec_dir will be allowed to be executed
+; via the exec family of functions. This is only AnNyung LInux patch
+; see also https://github.com/OOPS-ORG-PHP/mod_execdir/
+exec_dir = /var/lib/php/bin
 ```
 
-PHP 5.3 이하 버전에서 소스 패치를 했을 경우에는, "***exec_dir***" 대신에 "***safe_mode_exec_dir***" ini 옵션을 사용해야 합니다.
+아래와 같이 ***exec_dir*** 옵션이 설정이 되어 있지 않을 경우에는, ***configure***시에 지정한 ***--with-execdir*** 값이 사용이 됩니다. ***configure*** 시에 ***--with-execdir*** 옵션을 주지 않았다면, 이 경우 ***exec_dir***의 값은 빈 값이 됩니다.
 
 ```ini
-safe_mode_exec_dir = /var/lib/php/bin
+; only executables located in the exec_dir will be allowed to be executed
+; via the exec family of functions. This is only AnNyung LInux patch
+; see also https://github.com/OOPS-ORG-PHP/mod_execdir/
+;exec_dir =
 ```
 
+만약, jail을 하고 싶지 않다면 다음과 같이 빈 값을 지정해 놓아야 합니다.
 
-### 2. 명령어 파서 지원 형식
+```ini
+; only executables located in the exec_dir will be allowed to be executed
+; via the exec family of functions. This is only AnNyung LInux patch
+; see also https://github.com/OOPS-ORG-PHP/mod_execdir/
+exec_dir =
+```
+
+### 4.1.2 Apache VirtualHost
+
+***PHP***를 ***apache module***로 사용할 경우 ***php_admin_value*** 지시자를 이용하여 가상 호스트마다 설정을 다르게 할 수 있습니다.
+```apache
+<VirtualHost *:80>
+    ServerName domain.com
+    DocumentRoot /var/www/domain.com
+
+    <IfModule php7_module>
+        php_admin_flag exec_dir /var/php/domain.com/bin
+    </IfModule>
+</VirtualHost>
+
+<VirtualHost *:80>
+    ServerName domain-other.com
+    DocumentRoot /var/www/domain-other.com
+
+    <IfModule php7_module>
+        php_admin_flag exec_dir /var/php/domain-other.com/bin
+    </IfModule>
+</VirtualHost>
+```
+
+이 설정을 응용하면 ```<Directory>```, ```<Location>``` 등의 블럭에서도 사용이 가능 합니다.
+
+***exec_dir*** 옵션은 ***PHP_INI_SYSTEM***으로 할당이 되어 있기 때문에, ***.htaccess*** 에서는 사용이 불가능 합니다.
+
+### 4.1.3 PHP FPM pool
+
+***PHP***를 ***fpm*** 모드로 사용할 경우에는, FPM pool 별로 설정이 가능 합니다.
+
+```ini
+[www]
+php_admin_flag[exec_dir] = /var/php/pool/www/bin
+
+[www1]
+php_admin_flag[exec_dir] = /var/php/pool/www1/bin
+```
+
+### 4.2. 명령어 파서 지원 형식
 
 paser에서 지원하는 형식은 다음과 같습니다:
 
@@ -139,11 +189,11 @@ exec ("/var/lib/php/bin/echo '$(ls -l | grep abc)' | /var/lib/php/bin/grep abc")
 exec ('/var/lib/php/bin/echo "$(/var/lib/php/bin/ls -l | /var/lib/php/bin/grep abc)" | /var/lib/php/bin/grep abc');
 ```
 
-### 3. APIs
+### 4.3. APIs
 
 mod_execdir 확장 패키지로 빌드를 했을 경우에만 해당 됩니다.
 
-#### 1. Original functions
+#### 4.3.1. Original functions
 
 기존의 함수들은 ***_orig*** 접미사를 이용하여 호출을 할 수 있습니다.
 
@@ -166,7 +216,7 @@ var_dump ($o);
   * proc_terminate_orig
   * proc_get_status_orig
 
-### 2. mod_execdir APIs
+#### 4.3.2. mod_execdir APIs
 
   * ***exec_re*** : mapping ***exec*** function
   * ***system_re*** : mapping ***system*** function
@@ -209,5 +259,5 @@ var_dump ($o);
   ```
 
 
-## Contributors
+## 5.Contributors
 JoungKyun.Kim
