@@ -2,7 +2,7 @@
 
 ## 1. 설명
 
-***PHP Execdir Patch***는 ***mod_execdir*** 기능을 확장 기능으로 사용하는 것이 아니라, PHP code에 직접 pacth를 하여 PHP의 main 기능으로 사용하는 패치 입니다.
+***PHP Execdir Patch***는 [***mod_execdir***](https://github.com/OOPS-ORG-PHP/mod_execdir/) 기능을 확장 기능으로 사용하는 것이 아니라, PHP code에 직접 pacth를 하여 PHP의 main 기능으로 사용하는 패치 입니다.
 
 이 패치를 이용하면, PHP의 시스템 함수를 사용시에 특정 디렉토리에 있는 명령만 실행할 수 있도록 제한을 하여, ***web shell***이나 ***system shell injection*** 공격을 <u>원천적으로 방어</u>할 수 있으며, 다음의 함수에 영향을 미칩니다.
 
