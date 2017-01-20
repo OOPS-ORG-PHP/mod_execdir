@@ -26,7 +26,7 @@
 	</stability>
 	<license uri="http://www.php.net/license">PHP</license>
 	<notes>
-
+		- fixed #13 closing of fd incorrect when PTS enabled (php bug #69442)
 	</notes>
 	<contents>
 		<dir name="/">
@@ -79,7 +79,7 @@
 			<version><release>1.0.2</release><api>1.0.0</api></version>
 			<date>2017-01-10</date>
 			<notes>
-
+				- fixed #13 closing of fd incorrect when PTS enabled (php bug #69442)
 			</notes>
 		</release>
 		<release>
