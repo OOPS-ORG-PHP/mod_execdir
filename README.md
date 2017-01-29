@@ -51,7 +51,7 @@ For this features, we support 2 building method.
 
 ### 3.2. PHP source patch
 
-This feature can be used as a PHP extension, or you can patch it directly to the PHP source. If you prefer to patch your PHP directly rather than using it as an extension, see the [description of the patch file(https://github.com/OOPS-ORG-PHP/mod_execdir/blob/master/README.md).
+This feature can be used as a PHP extension, or you can patch it directly to the PHP source. If you prefer to patch your PHP directly rather than using it as an extension, see the [description of the patch file](https://github.com/OOPS-ORG-PHP/mod_execdir/blob/master/patches/).
 
 
 ### 3.3. mod_execdir dynamic extension
