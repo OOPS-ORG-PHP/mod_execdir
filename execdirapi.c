@@ -431,7 +431,8 @@ roopstart:
 			case '`' :
 			case '$' :
 			case '&' :
-				if ( _cmd[i-1] == '\\' ) {
+				// if escape sor redirection(>& or &>) status, don't apply
+				if ( _cmd[i-1] == '\\' || (_cmd[i] == '&' && (_cmd[i-1] == '>' || _cmd[i+1] == '>')) ) {
 					i++;
 					goto roopstart;
 				}

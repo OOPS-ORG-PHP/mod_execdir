@@ -463,7 +463,7 @@ diff -urNp php-5.3.29.org/ext/standard/exec.c php-5.3.29/ext/standard/exec.c
 +			case '`' :
 +			case '$' :
 +			case '&' :
-+				if ( _cmd[i-1] == '\\' ) {
++				if ( _cmd[i-1] == '\\' || (_cmd[i] == '&' && (_cmd[i-1] == '>' || _cmd[i+1] == '>')) ) {
 +					i++;
 +					goto roopstart;
 +				}
