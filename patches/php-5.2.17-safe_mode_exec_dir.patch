@@ -1,6 +1,6 @@
 diff -urNp php-5.2.17.org/ext/standard/exec.c php-5.2.17/ext/standard/exec.c
 --- php-5.2.17.org/ext/standard/exec.c	2010-01-13 22:44:58.000000000 +0900
-+++ php-5.2.17/ext/standard/exec.c	2017-01-07 00:54:08.763179583 +0900
++++ php-5.2.17/ext/standard/exec.c	2017-09-01 01:28:34.230708621 +0900
 @@ -63,7 +63,7 @@ int php_exec(int type, char *cmd, zval *
  	FILE *fp;
  	char *buf, *tmp=NULL;
@@ -20,7 +20,7 @@ diff -urNp php-5.2.17.org/ext/standard/exec.c php-5.2.17/ext/standard/exec.c
  	}
  
  #if PHP_SIGCHILD
-@@ -407,6 +408,480 @@ char *php_escape_shell_arg(char *str) {
+@@ -407,6 +408,484 @@ char *php_escape_shell_arg(char *str) {
  }
  /* }}} */
  
@@ -135,10 +135,14 @@ diff -urNp php-5.2.17.org/ext/standard/exec.c php-5.2.17/ext/standard/exec.c
 +	}
 +
 +	ret->argv = estrdup (path + i);
-+	*(path + i) = 0;
-+	ret->alen = strlen (ret->argv);
-+	ret->cmd  = estrdup (path);
-+	ret->clen = strlen (path);
++	{
++		char * npath = estrdup (path);
++		*(npath + i) = 0;
++		ret->alen = strlen (ret->argv);
++		ret->cmd  = estrdup (npath);
++		ret->clen = strlen (npath);
++		efree (npath);
++	}
 +
 +	if ( ret->debug > 0 ) {
 +		php_printf ("-- make_cmdargv ------\n");
@@ -501,7 +505,7 @@ diff -urNp php-5.2.17.org/ext/standard/exec.c php-5.2.17/ext/standard/exec.c
  /* {{{ proto string escapeshellcmd(string command)
     Escape shell metacharacters */
  PHP_FUNCTION(escapeshellcmd)
-@@ -455,6 +930,7 @@ PHP_FUNCTION(shell_exec)
+@@ -455,6 +934,7 @@ PHP_FUNCTION(shell_exec)
  	size_t total_readbytes;
  	zval **cmd;
  	char *ret;
@@ -509,7 +513,7 @@ diff -urNp php-5.2.17.org/ext/standard/exec.c php-5.2.17/ext/standard/exec.c
  	php_stream *stream;
  
  	if (ZEND_NUM_ARGS()!=1 || zend_get_parameters_ex(1, &cmd)==FAILURE) {
-@@ -467,14 +943,17 @@ PHP_FUNCTION(shell_exec)
+@@ -467,14 +947,17 @@ PHP_FUNCTION(shell_exec)
  	}
  
  	convert_to_string_ex(cmd);
@@ -532,7 +536,7 @@ diff -urNp php-5.2.17.org/ext/standard/exec.c php-5.2.17/ext/standard/exec.c
  	total_readbytes = php_stream_copy_to_mem(stream, &ret, PHP_STREAM_COPY_ALL, 0);
 diff -urNp php-5.2.17.org/ext/standard/exec.h php-5.2.17/ext/standard/exec.h
 --- php-5.2.17.org/ext/standard/exec.h	2010-01-03 18:23:27.000000000 +0900
-+++ php-5.2.17/ext/standard/exec.h	2017-01-07 00:54:08.764179638 +0900
++++ php-5.2.17/ext/standard/exec.h	2017-09-01 01:27:58.892818025 +0900
 @@ -34,8 +34,33 @@ PHP_FUNCTION(proc_terminate);
  PHP_FUNCTION(proc_nice);
  PHP_MINIT_FUNCTION(proc_open);
@@ -569,7 +573,7 @@ diff -urNp php-5.2.17.org/ext/standard/exec.h php-5.2.17/ext/standard/exec.h
  #endif /* EXEC_H */
 diff -urNp php-5.2.17.org/ext/standard/file.c php-5.2.17/ext/standard/file.c
 --- php-5.2.17.org/ext/standard/file.c	2010-05-03 04:34:21.000000000 +0900
-+++ php-5.2.17/ext/standard/file.c	2017-01-07 00:53:51.251212684 +0900
++++ php-5.2.17/ext/standard/file.c	2017-09-01 01:27:58.901818507 +0900
 @@ -995,7 +995,10 @@ PHP_FUNCTION(popen)
  		efree(buf);
  
@@ -584,7 +588,7 @@ diff -urNp php-5.2.17.org/ext/standard/file.c php-5.2.17/ext/standard/file.c
  			efree(p);
 diff -urNp php-5.2.17.org/ext/standard/proc_open.c php-5.2.17/ext/standard/proc_open.c
 --- php-5.2.17.org/ext/standard/proc_open.c	2010-01-03 18:23:27.000000000 +0900
-+++ php-5.2.17/ext/standard/proc_open.c	2017-01-07 00:53:51.251212684 +0900
++++ php-5.2.17/ext/standard/proc_open.c	2017-09-01 01:27:58.908818881 +0900
 @@ -285,7 +285,8 @@ static int php_make_safe_mode_command(ch
  	char *space, *sep, *arg0;
  

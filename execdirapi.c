@@ -147,10 +147,14 @@ CmdArgv * make_cmdargv (char * cmd) {
 	}
 
 	ret->argv = estrdup (path + i);
-	*(path + i) = 0;
-	ret->alen = strlen (ret->argv);
-	ret->cmd  = estrdup (path);
-	ret->clen = strlen (path);
+	{
+		char * npath = estrdup (path);
+		*(npath + i) = 0;
+		ret->alen = strlen (ret->argv);
+		ret->cmd  = estrdup (npath);
+		ret->clen = strlen (npath);
+		efree (npath);
+	}
 
 	if ( ret->debug > 0 ) {
 		php_printf ("-- make_cmdargv ------\n");

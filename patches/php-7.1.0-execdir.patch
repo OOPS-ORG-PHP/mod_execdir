@@ -1,6 +1,6 @@
 diff -urNp php-7.1.0.org/configure php-7.1.0/configure
 --- php-7.1.0.org/configure	2016-12-02 11:07:48.000000000 +0900
-+++ php-7.1.0/configure	2017-01-07 01:22:09.119376995 +0900
++++ php-7.1.0/configure	2017-09-01 01:47:35.618780388 +0900
 @@ -15700,6 +15700,45 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
@@ -49,7 +49,7 @@ diff -urNp php-7.1.0.org/configure php-7.1.0/configure
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PHP's own SIGCHLD handler" >&5
 diff -urNp php-7.1.0.org/configure.in php-7.1.0/configure.in
 --- php-7.1.0.org/configure.in	2016-12-02 11:07:48.000000000 +0900
-+++ php-7.1.0/configure.in	2017-01-07 01:22:09.122377159 +0900
++++ php-7.1.0/configure.in	2017-09-01 01:47:35.627780869 +0900
 @@ -926,6 +926,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
  
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
@@ -72,7 +72,7 @@ diff -urNp php-7.1.0.org/configure.in php-7.1.0/configure.in
  
 diff -urNp php-7.1.0.org/ext/pcntl/pcntl.c php-7.1.0/ext/pcntl/pcntl.c
 --- php-7.1.0.org/ext/pcntl/pcntl.c	2016-12-02 11:07:46.000000000 +0900
-+++ php-7.1.0/ext/pcntl/pcntl.c	2017-01-07 01:22:09.123377213 +0900
++++ php-7.1.0/ext/pcntl/pcntl.c	2017-09-01 01:47:35.631781082 +0900
 @@ -46,6 +46,9 @@
  
  #include <errno.h>
@@ -141,7 +141,7 @@ diff -urNp php-7.1.0.org/ext/pcntl/pcntl.c php-7.1.0/ext/pcntl/pcntl.c
  	RETURN_FALSE;
 diff -urNp php-7.1.0.org/ext/standard/exec.c php-7.1.0/ext/standard/exec.c
 --- php-7.1.0.org/ext/standard/exec.c	2016-12-02 11:07:40.000000000 +0900
-+++ php-7.1.0/ext/standard/exec.c	2017-01-07 01:22:12.934585388 +0900
++++ php-7.1.0/ext/standard/exec.c	2017-09-01 01:48:03.801285374 +0900
 @@ -96,7 +96,7 @@ PHPAPI int php_exec(int type, char *cmd,
  	char *buf;
  	size_t l = 0;
@@ -174,7 +174,7 @@ diff -urNp php-7.1.0.org/ext/standard/exec.c php-7.1.0/ext/standard/exec.c
  
  	stream = php_stream_fopen_from_pipe(fp, "rb");
  
-@@ -466,6 +470,500 @@ PHPAPI zend_string *php_escape_shell_arg
+@@ -466,6 +470,504 @@ PHPAPI zend_string *php_escape_shell_arg
  }
  /* }}} */
  
@@ -289,10 +289,14 @@ diff -urNp php-7.1.0.org/ext/standard/exec.c php-7.1.0/ext/standard/exec.c
 +	}
 +
 +	ret->argv = estrdup (path + i);
-+	*(path + i) = 0;
-+	ret->alen = strlen (ret->argv);
-+	ret->cmd  = estrdup (path);
-+	ret->clen = strlen (path);
++	{
++		char * npath = estrdup (path);
++		*(npath + i) = 0;
++		ret->alen = strlen (ret->argv);
++		ret->cmd  = estrdup (npath);
++		ret->clen = strlen (npath);
++		efree (npath);
++	}
 +
 +	if ( ret->debug > 0 ) {
 +		php_printf ("-- make_cmdargv ------\n");
@@ -675,7 +679,7 @@ diff -urNp php-7.1.0.org/ext/standard/exec.c php-7.1.0/ext/standard/exec.c
  /* {{{ proto string escapeshellcmd(string command)
     Escape shell metacharacters */
  PHP_FUNCTION(escapeshellcmd)
-@@ -518,20 +1016,29 @@ PHP_FUNCTION(shell_exec)
+@@ -518,20 +1020,29 @@ PHP_FUNCTION(shell_exec)
  	char *command;
  	size_t command_len;
  	zend_string *ret;
@@ -710,7 +714,7 @@ diff -urNp php-7.1.0.org/ext/standard/exec.c php-7.1.0/ext/standard/exec.c
  	ret = php_stream_copy_to_mem(stream, PHP_STREAM_COPY_ALL, 0);
 diff -urNp php-7.1.0.org/ext/standard/exec.h php-7.1.0/ext/standard/exec.h
 --- php-7.1.0.org/ext/standard/exec.h	2016-12-02 11:07:40.000000000 +0900
-+++ php-7.1.0/ext/standard/exec.h	2017-01-07 01:22:12.935585443 +0900
++++ php-7.1.0/ext/standard/exec.h	2017-09-01 01:47:35.669783113 +0900
 @@ -35,8 +35,33 @@ PHP_FUNCTION(proc_nice);
  PHP_MINIT_FUNCTION(proc_open);
  PHP_MINIT_FUNCTION(exec);
@@ -747,7 +751,7 @@ diff -urNp php-7.1.0.org/ext/standard/exec.h php-7.1.0/ext/standard/exec.h
  #endif /* EXEC_H */
 diff -urNp php-7.1.0.org/ext/standard/file.c php-7.1.0/ext/standard/file.c
 --- php-7.1.0.org/ext/standard/file.c	2016-12-02 11:07:40.000000000 +0900
-+++ php-7.1.0/ext/standard/file.c	2017-01-07 01:22:09.125377323 +0900
++++ php-7.1.0/ext/standard/file.c	2017-09-01 01:47:35.686784021 +0900
 @@ -907,7 +907,7 @@ PHPAPI PHP_FUNCTION(fclose)
     Execute a command and open either a read or a write pipe to it */
  PHP_FUNCTION(popen)
@@ -783,7 +787,7 @@ diff -urNp php-7.1.0.org/ext/standard/file.c php-7.1.0/ext/standard/file.c
  		efree(posix_mode);
 diff -urNp php-7.1.0.org/ext/standard/proc_open.c php-7.1.0/ext/standard/proc_open.c
 --- php-7.1.0.org/ext/standard/proc_open.c	2016-12-02 11:07:37.000000000 +0900
-+++ php-7.1.0/ext/standard/proc_open.c	2017-01-07 01:22:09.126377377 +0900
++++ php-7.1.0/ext/standard/proc_open.c	2017-09-01 01:47:35.696784556 +0900
 @@ -412,7 +412,7 @@ struct php_proc_open_descriptor_item {
     Run a process with more control over it's file descriptors */
  PHP_FUNCTION(proc_open)
@@ -811,7 +815,7 @@ diff -urNp php-7.1.0.org/ext/standard/proc_open.c php-7.1.0/ext/standard/proc_op
  	if (other_options) {
 diff -urNp php-7.1.0.org/main/main.c php-7.1.0/main/main.c
 --- php-7.1.0.org/main/main.c	2016-12-02 11:07:47.000000000 +0900
-+++ php-7.1.0/main/main.c	2017-01-07 01:22:09.127377432 +0900
++++ php-7.1.0/main/main.c	2017-09-01 01:47:35.703784930 +0900
 @@ -505,6 +505,10 @@ PHP_INI_MH(OnChangeBrowscap);
   * PHP_INCLUDE_PATH
   */
@@ -833,7 +837,7 @@ diff -urNp php-7.1.0.org/main/main.c php-7.1.0/main/main.c
  	STD_PHP_INI_ENTRY("upload_max_filesize",	"2M",		PHP_INI_SYSTEM|PHP_INI_PERDIR,		OnUpdateLong,			upload_max_filesize,	php_core_globals,	core_globals)
 diff -urNp php-7.1.0.org/main/php_config.h.in php-7.1.0/main/php_config.h.in
 --- php-7.1.0.org/main/php_config.h.in	2016-12-02 11:07:47.000000000 +0900
-+++ php-7.1.0/main/php_config.h.in	2017-01-07 01:22:09.128377486 +0900
++++ php-7.1.0/main/php_config.h.in	2017-09-01 01:47:35.713785464 +0900
 @@ -2271,6 +2271,9 @@
  #undef PHP_PWRITE_64
  
@@ -846,7 +850,7 @@ diff -urNp php-7.1.0.org/main/php_config.h.in php-7.1.0/main/php_config.h.in
  /* uname -a output */
 diff -urNp php-7.1.0.org/main/php_globals.h php-7.1.0/main/php_globals.h
 --- php-7.1.0.org/main/php_globals.h	2016-12-02 11:07:47.000000000 +0900
-+++ php-7.1.0/main/php_globals.h	2017-01-07 01:22:09.128377486 +0900
++++ php-7.1.0/main/php_globals.h	2017-09-01 01:47:35.716785624 +0900
 @@ -164,6 +164,8 @@ struct _php_core_globals {
  
  	zend_bool in_error_log;
@@ -858,7 +862,7 @@ diff -urNp php-7.1.0.org/main/php_globals.h php-7.1.0/main/php_globals.h
  #endif
 diff -urNp php-7.1.0.org/php.ini-development php-7.1.0/php.ini-development
 --- php-7.1.0.org/php.ini-development	2016-12-02 11:07:37.000000000 +0900
-+++ php-7.1.0/php.ini-development	2017-01-07 01:22:09.129377541 +0900
++++ php-7.1.0/php.ini-development	2017-09-01 01:47:35.725786105 +0900
 @@ -302,6 +302,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1
@@ -873,7 +877,7 @@ diff -urNp php-7.1.0.org/php.ini-development php-7.1.0/php.ini-development
  ; or per-virtualhost web server configuration file.
 diff -urNp php-7.1.0.org/php.ini-production php-7.1.0/php.ini-production
 --- php-7.1.0.org/php.ini-production	2016-12-02 11:07:48.000000000 +0900
-+++ php-7.1.0/php.ini-production	2017-01-07 01:22:09.130377596 +0900
++++ php-7.1.0/php.ini-production	2017-09-01 01:47:35.733786533 +0900
 @@ -302,6 +302,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1

@@ -1,6 +1,6 @@
 diff -urNp php-4.4.9.org/ext/standard/exec.c php-4.4.9/ext/standard/exec.c
 --- php-4.4.9.org/ext/standard/exec.c	2007-12-31 16:22:52.000000000 +0900
-+++ php-4.4.9/ext/standard/exec.c	2017-01-07 00:44:48.203335693 +0900
++++ php-4.4.9/ext/standard/exec.c	2017-09-01 01:24:36.179954285 +0900
 @@ -52,7 +52,8 @@ static int php_make_safe_mode_command(ch
  	char *space, *sep, *arg0;
  
@@ -42,7 +42,7 @@ diff -urNp php-4.4.9.org/ext/standard/exec.c php-4.4.9/ext/standard/exec.c
  			efree(buf);
  #if PHP_SIGCHILD
  			signal (SIGCHLD, sig_handler);
-@@ -504,6 +507,481 @@ PHPAPI char *php_escape_shell_arg(char *
+@@ -504,6 +507,485 @@ PHPAPI char *php_escape_shell_arg(char *
  }
  /* }}} */
  
@@ -157,10 +157,14 @@ diff -urNp php-4.4.9.org/ext/standard/exec.c php-4.4.9/ext/standard/exec.c
 +	}
 +
 +	ret->argv = estrdup (path + i);
-+	*(path + i) = 0;
-+	ret->alen = strlen (ret->argv);
-+	ret->cmd  = estrdup (path);
-+	ret->clen = strlen (path);
++	{
++		char * npath = estrdup (path);
++		*(npath + i) = 0;
++		ret->alen = strlen (ret->argv);
++		ret->cmd  = estrdup (npath);
++		ret->clen = strlen (npath);
++		efree (npath);
++	}
 +
 +	if ( ret->debug > 0 ) {
 +		php_printf ("-- make_cmdargv ------\n");
@@ -524,7 +528,7 @@ diff -urNp php-4.4.9.org/ext/standard/exec.c php-4.4.9/ext/standard/exec.c
  /* {{{ proto string escapeshellcmd(string command)
     Escape shell metacharacters */
  PHP_FUNCTION(escapeshellcmd)
-@@ -552,6 +1030,7 @@ PHP_FUNCTION(shell_exec)
+@@ -552,6 +1034,7 @@ PHP_FUNCTION(shell_exec)
  	int readbytes, total_readbytes=0, allocated_space;
  	pval **cmd;
  	char *ret;
@@ -532,7 +536,7 @@ diff -urNp php-4.4.9.org/ext/standard/exec.c php-4.4.9/ext/standard/exec.c
  
  	if (ZEND_NUM_ARGS()!=1 || zend_get_parameters_ex(1, &cmd)==FAILURE) {
  		WRONG_PARAM_COUNT;
-@@ -563,14 +1042,18 @@ PHP_FUNCTION(shell_exec)
+@@ -563,14 +1046,18 @@ PHP_FUNCTION(shell_exec)
  	}
  
  	convert_to_string_ex(cmd);
@@ -556,7 +560,7 @@ diff -urNp php-4.4.9.org/ext/standard/exec.c php-4.4.9/ext/standard/exec.c
  	while (1) {
 diff -urNp php-4.4.9.org/ext/standard/exec.h php-4.4.9/ext/standard/exec.h
 --- php-4.4.9.org/ext/standard/exec.h	2007-12-31 16:22:52.000000000 +0900
-+++ php-4.4.9/ext/standard/exec.h	2017-01-07 00:44:48.204335747 +0900
++++ php-4.4.9/ext/standard/exec.h	2017-09-01 01:24:01.028070031 +0900
 @@ -31,8 +31,33 @@ PHP_FUNCTION(proc_open);
  PHP_FUNCTION(proc_close);
  PHP_MINIT_FUNCTION(proc_open);
@@ -593,7 +597,7 @@ diff -urNp php-4.4.9.org/ext/standard/exec.h php-4.4.9/ext/standard/exec.h
  #define PHP_EMPTY_EXEC_PARAM { php_error_docref(NULL TSRMLS_CC, E_WARNING, "Cannot execute a blank command"); RETURN_FALSE; }
 diff -urNp php-4.4.9.org/ext/standard/file.c php-4.4.9/ext/standard/file.c
 --- php-4.4.9.org/ext/standard/file.c	2007-12-31 16:22:52.000000000 +0900
-+++ php-4.4.9/ext/standard/file.c	2017-01-07 00:44:44.060109150 +0900
++++ php-4.4.9/ext/standard/file.c	2017-09-01 01:24:01.035070405 +0900
 @@ -1243,7 +1243,10 @@ PHP_FUNCTION(popen)
  		efree(buf);
  

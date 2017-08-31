@@ -1,6 +1,6 @@
 diff -urNp php-5.4.25.org/configure php-5.4.25/configure
 --- php-5.4.25.org/configure	2014-02-05 17:43:09.000000000 +0900
-+++ php-5.4.25/configure	2017-01-07 00:59:12.723839891 +0900
++++ php-5.4.25/configure	2017-09-01 01:31:13.402211860 +0900
 @@ -20393,6 +20393,45 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
@@ -49,7 +49,7 @@ diff -urNp php-5.4.25.org/configure php-5.4.25/configure
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PHP's own SIGCHLD handler" >&5
 diff -urNp php-5.4.25.org/configure.in php-5.4.25/configure.in
 --- php-5.4.25.org/configure.in	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/configure.in	2017-01-07 00:59:12.727840110 +0900
++++ php-5.4.25/configure.in	2017-09-01 01:31:13.406212074 +0900
 @@ -900,6 +900,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
  
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
@@ -72,7 +72,7 @@ diff -urNp php-5.4.25.org/configure.in php-5.4.25/configure.in
  
 diff -urNp php-5.4.25.org/ext/pcntl/pcntl.c php-5.4.25/ext/pcntl/pcntl.c
 --- php-5.4.25.org/ext/pcntl/pcntl.c	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/ext/pcntl/pcntl.c	2017-01-07 00:59:12.728840165 +0900
++++ php-5.4.25/ext/pcntl/pcntl.c	2017-09-01 01:31:13.434213570 +0900
 @@ -46,6 +46,9 @@
  
  #include <errno.h>
@@ -140,7 +140,7 @@ diff -urNp php-5.4.25.org/ext/pcntl/pcntl.c php-5.4.25/ext/pcntl/pcntl.c
  	RETURN_FALSE;
 diff -urNp php-5.4.25.org/ext/standard/exec.c php-5.4.25/ext/standard/exec.c
 --- php-5.4.25.org/ext/standard/exec.c	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/ext/standard/exec.c	2017-01-07 01:03:30.698958695 +0900
++++ php-5.4.25/ext/standard/exec.c	2017-09-01 01:31:57.667576726 +0900
 @@ -62,7 +62,7 @@ PHPAPI int php_exec(int type, char *cmd,
  	FILE *fp;
  	char *buf;
@@ -185,7 +185,7 @@ diff -urNp php-5.4.25.org/ext/standard/exec.c php-5.4.25/ext/standard/exec.c
  	if (!ret_array) {
  		ret = php_exec(mode, cmd, NULL, return_value TSRMLS_CC);
  	} else {
-@@ -391,6 +400,487 @@ PHPAPI char *php_escape_shell_arg(char *
+@@ -391,6 +400,491 @@ PHPAPI char *php_escape_shell_arg(char *
  }
  /* }}} */
  
@@ -300,10 +300,14 @@ diff -urNp php-5.4.25.org/ext/standard/exec.c php-5.4.25/ext/standard/exec.c
 +	}
 +
 +	ret->argv = estrdup (path + i);
-+	*(path + i) = 0;
-+	ret->alen = strlen (ret->argv);
-+	ret->cmd  = estrdup (path);
-+	ret->clen = strlen (path);
++	{
++		char * npath = estrdup (npath);
++		*(npath + i) = 0;
++		ret->alen = strlen (ret->argv);
++		ret->cmd  = estrdup (npath);
++		ret->clen = strlen (npath);
++		efree (npath);
++	}
 +
 +	if ( ret->debug > 0 ) {
 +		php_printf ("-- make_cmdargv ------\n");
@@ -673,7 +677,7 @@ diff -urNp php-5.4.25.org/ext/standard/exec.c php-5.4.25/ext/standard/exec.c
  /* {{{ proto string escapeshellcmd(string command)
     Escape shell metacharacters */
  PHP_FUNCTION(escapeshellcmd)
-@@ -440,20 +930,29 @@ PHP_FUNCTION(shell_exec)
+@@ -440,20 +934,29 @@ PHP_FUNCTION(shell_exec)
  	char *command;
  	int command_len;
  	char *ret;
@@ -708,7 +712,7 @@ diff -urNp php-5.4.25.org/ext/standard/exec.c php-5.4.25/ext/standard/exec.c
  	total_readbytes = php_stream_copy_to_mem(stream, &ret, PHP_STREAM_COPY_ALL, 0);
 diff -urNp php-5.4.25.org/ext/standard/exec.h php-5.4.25/ext/standard/exec.h
 --- php-5.4.25.org/ext/standard/exec.h	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/ext/standard/exec.h	2017-01-07 01:00:01.522513865 +0900
++++ php-5.4.25/ext/standard/exec.h	2017-09-01 01:31:13.448214318 +0900
 @@ -34,8 +34,33 @@ PHP_FUNCTION(proc_terminate);
  PHP_FUNCTION(proc_nice);
  PHP_MINIT_FUNCTION(proc_open);
@@ -745,7 +749,7 @@ diff -urNp php-5.4.25.org/ext/standard/exec.h php-5.4.25/ext/standard/exec.h
  #endif /* EXEC_H */
 diff -urNp php-5.4.25.org/ext/standard/file.c php-5.4.25/ext/standard/file.c
 --- php-5.4.25.org/ext/standard/file.c	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/ext/standard/file.c	2017-01-07 00:59:12.730840274 +0900
++++ php-5.4.25/ext/standard/file.c	2017-09-01 01:31:13.450214425 +0900
 @@ -907,7 +907,7 @@ PHPAPI PHP_FUNCTION(fclose)
     Execute a command and open either a read or a write pipe to it */
  PHP_FUNCTION(popen)
@@ -781,7 +785,7 @@ diff -urNp php-5.4.25.org/ext/standard/file.c php-5.4.25/ext/standard/file.c
  		efree(posix_mode);
 diff -urNp php-5.4.25.org/ext/standard/proc_open.c php-5.4.25/ext/standard/proc_open.c
 --- php-5.4.25.org/ext/standard/proc_open.c	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/ext/standard/proc_open.c	2017-01-07 00:59:12.731840329 +0900
++++ php-5.4.25/ext/standard/proc_open.c	2017-09-01 01:31:13.458214852 +0900
 @@ -417,7 +417,7 @@ struct php_proc_open_descriptor_item {
     Run a process with more control over it's file descriptors */
  PHP_FUNCTION(proc_open)
@@ -809,7 +813,7 @@ diff -urNp php-5.4.25.org/ext/standard/proc_open.c php-5.4.25/ext/standard/proc_
  	if (other_options) {
 diff -urNp php-5.4.25.org/main/main.c php-5.4.25/main/main.c
 --- php-5.4.25.org/main/main.c	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/main/main.c	2017-01-07 00:59:12.732840384 +0900
++++ php-5.4.25/main/main.c	2017-09-01 01:31:13.564220517 +0900
 @@ -470,6 +470,10 @@ PHP_INI_MH(OnChangeBrowscap);
   * PHP_INCLUDE_PATH
   */
@@ -832,7 +836,7 @@ diff -urNp php-5.4.25.org/main/main.c php-5.4.25/main/main.c
  	STD_PHP_INI_ENTRY("upload_max_filesize",	"2M",		PHP_INI_SYSTEM|PHP_INI_PERDIR,		OnUpdateLong,			upload_max_filesize,	php_core_globals,	core_globals)
 diff -urNp php-5.4.25.org/main/php_config.h.in php-5.4.25/main/php_config.h.in
 --- php-5.4.25.org/main/php_config.h.in	2014-02-05 17:43:10.000000000 +0900
-+++ php-5.4.25/main/php_config.h.in	2017-01-07 00:59:12.733840439 +0900
++++ php-5.4.25/main/php_config.h.in	2017-09-01 01:31:13.582221478 +0900
 @@ -2213,6 +2213,9 @@
  /* whether pwrite64 is default */
  #undef PHP_PWRITE_64
@@ -845,7 +849,7 @@ diff -urNp php-5.4.25.org/main/php_config.h.in php-5.4.25/main/php_config.h.in
  
 diff -urNp php-5.4.25.org/main/php_globals.h php-5.4.25/main/php_globals.h
 --- php-5.4.25.org/main/php_globals.h	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/main/php_globals.h	2017-01-07 00:59:12.733840439 +0900
++++ php-5.4.25/main/php_globals.h	2017-09-01 01:31:13.583221532 +0900
 @@ -66,6 +66,9 @@ struct _php_core_globals {
  	char *unserialize_callback_func;
  	long serialize_precision;
@@ -858,7 +862,7 @@ diff -urNp php-5.4.25.org/main/php_globals.h php-5.4.25/main/php_globals.h
  
 diff -urNp php-5.4.25.org/php.ini-development php-5.4.25/php.ini-development
 --- php-5.4.25.org/php.ini-development	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/php.ini-development	2017-01-07 00:59:12.734840494 +0900
++++ php-5.4.25/php.ini-development	2017-09-01 01:31:13.602222547 +0900
 @@ -301,6 +301,11 @@ unserialize_callback_func =
  ; are decoded with unserialize, the data will remain the same.
  serialize_precision = 17
@@ -873,7 +877,7 @@ diff -urNp php-5.4.25.org/php.ini-development php-5.4.25/php.ini-development
  ; or per-virtualhost web server configuration file. This directive is
 diff -urNp php-5.4.25.org/php.ini-production php-5.4.25/php.ini-production
 --- php-5.4.25.org/php.ini-production	2014-02-05 17:22:22.000000000 +0900
-+++ php-5.4.25/php.ini-production	2017-01-07 00:59:12.735840549 +0900
++++ php-5.4.25/php.ini-production	2017-09-01 01:31:13.604222654 +0900
 @@ -301,6 +301,11 @@ unserialize_callback_func =
  ; are decoded with unserialize, the data will remain the same.
  serialize_precision = 17

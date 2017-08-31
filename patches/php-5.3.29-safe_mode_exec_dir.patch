@@ -1,6 +1,6 @@
 diff -urNp php-5.3.29.org/ext/pcntl/pcntl.c php-5.3.29/ext/pcntl/pcntl.c
 --- php-5.3.29.org/ext/pcntl/pcntl.c	2014-08-14 04:22:50.000000000 +0900
-+++ php-5.3.29/ext/pcntl/pcntl.c	2017-01-07 00:56:36.857296929 +0900
++++ php-5.3.29/ext/pcntl/pcntl.c	2017-09-01 01:29:33.289864076 +0900
 @@ -46,6 +46,9 @@
  
  #include <errno.h>
@@ -68,7 +68,7 @@ diff -urNp php-5.3.29.org/ext/pcntl/pcntl.c php-5.3.29/ext/pcntl/pcntl.c
  	RETURN_FALSE;
 diff -urNp php-5.3.29.org/ext/standard/exec.c php-5.3.29/ext/standard/exec.c
 --- php-5.3.29.org/ext/standard/exec.c	2014-08-14 04:22:50.000000000 +0900
-+++ php-5.3.29/ext/standard/exec.c	2017-01-07 00:56:41.132531218 +0900
++++ php-5.3.29/ext/standard/exec.c	2017-09-01 01:30:03.644485212 +0900
 @@ -63,7 +63,7 @@ PHPAPI int php_exec(int type, char *cmd,
  	FILE *fp;
  	char *buf, *tmp=NULL;
@@ -100,7 +100,7 @@ diff -urNp php-5.3.29.org/ext/standard/exec.c php-5.3.29/ext/standard/exec.c
  	if (!ret_array) {
  		ret = php_exec(mode, cmd, NULL, return_value TSRMLS_CC);
  	} else {
-@@ -429,6 +435,480 @@ PHPAPI char *php_escape_shell_arg(char *
+@@ -429,6 +435,484 @@ PHPAPI char *php_escape_shell_arg(char *
  }
  /* }}} */
  
@@ -215,10 +215,14 @@ diff -urNp php-5.3.29.org/ext/standard/exec.c php-5.3.29/ext/standard/exec.c
 +	}
 +
 +	ret->argv = estrdup (path + i);
-+	*(path + i) = 0;
-+	ret->alen = strlen (ret->argv);
-+	ret->cmd  = estrdup (path);
-+	ret->clen = strlen (path);
++	{
++		char * npath = estrdup (path);
++		*(npath + i) = 0;
++		ret->alen = strlen (ret->argv);
++		ret->cmd  = estrdup (npath);
++		ret->clen = strlen (npath);
++		efree (npath);
++	}
 +
 +	if ( ret->debug > 0 ) {
 +		php_printf ("-- make_cmdargv ------\n");
@@ -581,7 +585,7 @@ diff -urNp php-5.3.29.org/ext/standard/exec.c php-5.3.29/ext/standard/exec.c
  /* {{{ proto string escapeshellcmd(string command)
     Escape shell metacharacters */
  PHP_FUNCTION(escapeshellcmd)
-@@ -478,6 +958,7 @@ PHP_FUNCTION(shell_exec)
+@@ -478,6 +962,7 @@ PHP_FUNCTION(shell_exec)
  	char *command;
  	int command_len;
  	char *ret;
@@ -589,7 +593,7 @@ diff -urNp php-5.3.29.org/ext/standard/exec.c php-5.3.29/ext/standard/exec.c
  	php_stream *stream;
  
  	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &command, &command_len) == FAILURE) {
-@@ -489,14 +970,22 @@ PHP_FUNCTION(shell_exec)
+@@ -489,14 +974,22 @@ PHP_FUNCTION(shell_exec)
  		RETURN_FALSE;
  	}
  
@@ -617,7 +621,7 @@ diff -urNp php-5.3.29.org/ext/standard/exec.c php-5.3.29/ext/standard/exec.c
  	total_readbytes = php_stream_copy_to_mem(stream, &ret, PHP_STREAM_COPY_ALL, 0);
 diff -urNp php-5.3.29.org/ext/standard/exec.h php-5.3.29/ext/standard/exec.h
 --- php-5.3.29.org/ext/standard/exec.h	2014-08-14 04:22:50.000000000 +0900
-+++ php-5.3.29/ext/standard/exec.h	2017-01-07 00:56:41.133531273 +0900
++++ php-5.3.29/ext/standard/exec.h	2017-09-01 01:29:33.313865358 +0900
 @@ -34,8 +34,33 @@ PHP_FUNCTION(proc_terminate);
  PHP_FUNCTION(proc_nice);
  PHP_MINIT_FUNCTION(proc_open);
@@ -654,7 +658,7 @@ diff -urNp php-5.3.29.org/ext/standard/exec.h php-5.3.29/ext/standard/exec.h
  #endif /* EXEC_H */
 diff -urNp php-5.3.29.org/ext/standard/file.c php-5.3.29/ext/standard/file.c
 --- php-5.3.29.org/ext/standard/file.c	2014-08-14 04:22:50.000000000 +0900
-+++ php-5.3.29/ext/standard/file.c	2017-01-07 00:56:36.859297039 +0900
++++ php-5.3.29/ext/standard/file.c	2017-09-01 01:29:33.319865678 +0900
 @@ -978,6 +978,11 @@ PHP_FUNCTION(popen)
  		return;
  	}
@@ -681,7 +685,7 @@ diff -urNp php-5.3.29.org/ext/standard/file.c php-5.3.29/ext/standard/file.c
  			efree(posix_mode);
 diff -urNp php-5.3.29.org/ext/standard/proc_open.c php-5.3.29/ext/standard/proc_open.c
 --- php-5.3.29.org/ext/standard/proc_open.c	2014-08-14 04:22:50.000000000 +0900
-+++ php-5.3.29/ext/standard/proc_open.c	2017-01-07 00:56:36.860297094 +0900
++++ php-5.3.29/ext/standard/proc_open.c	2017-09-01 01:29:33.321865785 +0900
 @@ -283,7 +283,8 @@ static int php_make_safe_mode_command(ch
  	char *space, *sep, *arg0;
  
