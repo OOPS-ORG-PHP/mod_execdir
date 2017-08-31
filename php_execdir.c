@@ -211,15 +211,15 @@ static int safe_hook_execdir (void) {
 		if ( ! execdir_hash_exists (CG (function_table), func) )
 			continue;
 
-#if 0
+#ifndef PHP_EXECDIR_COMPAT
 		/*
 		 * Remove original function
 		 */
-#if PHP_VERSION_ID < 60000
+	#if PHP_VERSION_ID < 60000
 		zend_hash_del (CG (function_table), func, funclen + 1);
-#else
+	#else
 		zend_hash_str_del (CG (function_table), func, funclen);
-#endif
+	#endif
 #else
 		/*
 		 * Rename original function gets postfie '_orig'
@@ -235,15 +235,15 @@ static int safe_hook_execdir (void) {
 			if ( execdir_hash_exists (CG (function_table), func_re) )
 				continue;
 
-#if PHP_VERSION_ID < 60000
+	#if PHP_VERSION_ID < 60000
 			zend_hash_find (CG (function_table), func, funclen + 1, (void **) &zf);
 			zend_hash_add (CG (function_table), func_re, func_relen + 1, zf, sizeof (zend_function), NULL);
 			zend_hash_del (CG (function_table), func, funclen + 1);
-#else
+	#else
 			zf = zend_hash_str_find_ptr (CG (function_table), func, funclen);
 			zend_hash_str_add_mem (CG (function_table), func_re, func_relen, zf, sizeof (zend_function));
 			zend_hash_str_del (CG (function_table), func, funclen);
-#endif
+	#endif
 		}
 #endif
 	}
