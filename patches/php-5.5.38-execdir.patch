@@ -323,7 +323,7 @@ diff -ruNp php-5.5.38.org/ext/standard/exec.c php-5.5.38/ext/standard/exec.c
 +	if ( exec_len ) {
 +		CmdArgv * cp;
 +		char * c = NULL;
-+		char * tmp;
++		//char * tmp;
 +		char * vcmd;
 +		char * __cmd;
 +

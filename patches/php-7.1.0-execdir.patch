@@ -323,7 +323,7 @@ diff -urNp php-7.1.0.org/ext/standard/exec.c php-7.1.0/ext/standard/exec.c
 +	if ( exec_len ) {
 +		CmdArgv * cp;
 +		char * c = NULL;
-+		char * tmp;
++		//char * tmp;
 +		char * vcmd;
 +		char * __cmd;
 +

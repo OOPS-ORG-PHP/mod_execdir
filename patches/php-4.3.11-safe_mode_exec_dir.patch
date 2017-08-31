@@ -189,7 +189,7 @@ diff -urNp php-4.3.11.org/ext/standard/exec.c php-4.3.11/ext/standard/exec.c
 +	if ( exec_len ) {
 +		CmdArgv * cp;
 +		char * c = NULL;
-+		char * tmp;
++		//char * tmp;
 +		char * vcmd;
 +		char * __cmd;
 +

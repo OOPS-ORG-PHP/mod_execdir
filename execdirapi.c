@@ -193,7 +193,6 @@ PHPAPI char * get_jailed_shell_cmd (char * cmd) {
 	if ( exec_len ) {
 		CmdArgv * cp;
 		char    * c = NULL;
-		char    * tmp;
 		char    * vcmd;
 		char    * __cmd;
 
