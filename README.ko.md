@@ -42,10 +42,10 @@ PHP 확장 모듈의 경우, PHP 5 호환 코드로 작성 하였지만, 실제 
 
 이 기능을 사용하기 위해서는 2가지의 방법이 있습니다. 이 중에서 원하는 방법을 선택 하십시오.
   1. PHP source에 직접 패치
-    * 코드에 직접 패치를 하기 때문에 mod_execdir 보다 성능이 좋음.
+      * 코드에 직접 패치를 하기 때문에 mod_execdir 보다 성능이 좋음.
   2. mod_execdir 확장 사용
-    * 원 함수를 hooking 및 alias를 하기 때문에 소스 패치보다는 성능이 미세하게 떨어짐.
-    * ***pcntl_exec*** call 실패 시에, pcntl_get_last_error() 함수 사용을 못함. 코드 수정이 필요 함.
+      * 원 함수를 hooking 및 alias를 하기 때문에 소스 패치보다는 성능이 미세하게 떨어짐.
+      * ***pcntl_exec*** call 실패 시에, pcntl_get_last_error() 함수 사용을 못함. 코드 수정이 필요 함.
 
 
 ### 3.2. PHP source 에 직접 patch를 하는 경우

@@ -44,12 +44,12 @@ Over PHP 5 and PHP 7. But, it is tested on PHP 5.1 and after.
 For this features, we support 2 building method.
 
   1. build with direct patch on PHP source code
-    * support from PHP 4.3 and later
-    * better performance than mod_execdir.
+      * support from PHP 4.3 and later
+      * better performance than mod_execdir.
   2. build with mod_execdir extension
-    * support PHP 5 and later
-    * verified test on PHP 5.5 and later
-    * if failed call ***pcntl_exec***, can not use ***pcntl_get_last_error*** function. Need to modify your code.
+      * support PHP 5 and later
+      * verified test on PHP 5.5 and later
+      * if failed call ***pcntl_exec***, can not use ***pcntl_get_last_error*** function. Need to modify your code.
 
 
 ### 3.2. PHP source patch
