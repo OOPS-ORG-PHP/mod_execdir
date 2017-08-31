@@ -20,7 +20,7 @@ else
 $fp = fopen ($target, 'rb');
 $exec_dir = ini_get ('exec_dir');
 
-while ( ($buf = fgets ($fp, 128)) !== false ) {
+while ( ($buf = fgets ($fp, 256)) !== false ) {
 	$buf = trim ($buf);
 	if ( preg_match ('/#execdir#/', $buf) ) {
 		$res[] = preg_replace ('/#execdir#/', $exec_dir, $buf);
@@ -37,6 +37,7 @@ foreach ( $cmds as $key => $cmd ) {
 }
 ?>
 --EXPECT--
+yes
 yes
 yes
 yes
