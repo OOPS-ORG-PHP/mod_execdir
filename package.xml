@@ -26,7 +26,11 @@
 	</stability>
 	<license uri="http://www.php.net/license">PHP</license>
 	<notes>
+		- fixed #12 Removing support for original system function with '_orig'
 		- fixed #13 closing of fd incorrect when PTS enabled (php bug #69442)
+		- fixed #15 But when using "2>&1" in exec command
+		- fixed #16 error "NULL byte detected."
+		- fixed #17 failed run-test 000-jailed_shellcmd.phpt
 	</notes>
 	<contents>
 		<dir name="/">
@@ -79,7 +83,11 @@
 			<version><release>1.0.2</release><api>1.0.0</api></version>
 			<date>2017-01-10</date>
 			<notes>
+				- fixed #12 Removing support for original system function with '_orig'
 				- fixed #13 closing of fd incorrect when PTS enabled (php bug #69442)
+				- fixed #15 But when using "2>&1" in exec command
+				- fixed #16 error "NULL byte detected."
+				- fixed #17 failed run-test 000-jailed_shellcmd.phpt
 			</notes>
 		</release>
 		<release>
