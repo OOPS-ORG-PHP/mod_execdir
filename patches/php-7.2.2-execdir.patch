@@ -1,0 +1,892 @@
+diff -urNp php-7.2.2.org/configure php-7.2.2/configure
+--- php-7.2.2.org/configure	2018-01-30 19:33:52.000000000 +0900
++++ php-7.2.2/configure	2018-02-07 20:47:56.842343627 +0900
+@@ -16037,6 +16037,45 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
+ test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
+ 
+ 
++echo $ac_n "checking for safe mode exec dir""... $ac_c" 1>&6
++echo "configure:20296: checking for safe mode exec dir" >&5
++
++php_with_exec_dir=no
++
++
++# Check whether --with-exec-dir or --without-exec-dir was given.
++if test "${with_exec_dir+set}" = set; then
++  withval="$with_exec_dir"
++  PHP_EXEC_DIR=$withval
++else
++
++  PHP_EXEC_DIR=no
++
++
++fi
++
++
++ext_output=$PHP_EXEC_DIR
++
++
++
++
++
++if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
++  cat >> confdefs.h <<EOF
++#define PHP_EXEC_DIR "$PHP_EXEC_DIR"
++EOF
++
++  echo "$ac_t""$PHP_EXEC_DIR" 1>&6
++else
++  cat >> confdefs.h <<\EOF
++#define PHP_EXEC_DIR "/usr/local/php/bin"
++EOF
++
++  echo "$ac_t""/usr/local/php/bin" 1>&6
++fi
++
++
+ php_enable_sigchild=no
+ 
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PHP's own SIGCHLD handler" >&5
+diff -urNp php-7.2.2.org/configure.ac php-7.2.2/configure.ac
+--- php-7.2.2.org/configure.ac	2018-01-30 19:33:38.000000000 +0900
++++ php-7.2.2/configure.ac	2018-02-07 20:47:56.844343733 +0900
+@@ -910,6 +910,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
+ 
+ test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
+ 
++AC_MSG_CHECKING([for exec dir])
++PHP_ARG_WITH(exec-dir,,
++[  --with-exec-dir[=DIR]   Only allow executables in DIR
++                          [/var/lib/php/bin]], no, no)
++
++if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
++	AC_DEFINE_UNQUOTED(PHP_EXEC_DIR, "$PHP_EXEC_DIR", [ ])
++	AC_MSG_RESULT([$PHP_EXEC_DIR])
++else
++	AC_DEFINE(PHP_EXEC_DIR, "/var/lib/php/bin", [ ])
++	AC_MSG_RESULT([/var/lib/php/bin])
++fi
++
+ PHP_ARG_ENABLE(sigchild, whether to enable PHP's own SIGCHLD handler,
+ [  --enable-sigchild       Enable PHP's own SIGCHLD handler], no, no)
+ 
+diff -urNp php-7.2.2.org/ext/pcntl/pcntl.c php-7.2.2/ext/pcntl/pcntl.c
+--- php-7.2.2.org/ext/pcntl/pcntl.c	2018-01-30 19:33:43.000000000 +0900
++++ php-7.2.2/ext/pcntl/pcntl.c	2018-02-07 20:47:56.844343733 +0900
+@@ -54,6 +54,9 @@
+ # endif
+ #endif
+ 
++// from ext/standard/exec.c
++char *get_jailed_shell_cmd (char *);
++
+ ZEND_DECLARE_MODULE_GLOBALS(pcntl)
+ static PHP_GINIT_FUNCTION(pcntl);
+ 
+@@ -903,7 +906,7 @@ PHP_FUNCTION(pcntl_exec)
+ 	char **current_arg, **pair;
+ 	int pair_length;
+ 	zend_string *key;
+-	char *path;
++	char *path, *jpath = NULL;
+ 	size_t path_len;
+ 	zend_ulong key_num;
+ 
+@@ -911,6 +914,11 @@ PHP_FUNCTION(pcntl_exec)
+ 		return;
+ 	}
+ 
++	if (strlen(path) != path_len) {
++		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
++		RETURN_FALSE;
++	}
++ 	
+ 	if (ZEND_NUM_ARGS() > 1) {
+ 		/* Build argument list */
+ 		args_hash = Z_ARRVAL_P(args);
+@@ -933,6 +941,8 @@ PHP_FUNCTION(pcntl_exec)
+ 		*(argv+1) = NULL;
+ 	}
+ 
++	jpath = get_jailed_shell_cmd(path);
++
+ 	if ( ZEND_NUM_ARGS() == 3 ) {
+ 		/* Build environment pair list */
+ 		envs_hash = Z_ARRVAL_P(envs);
+@@ -963,7 +973,8 @@ PHP_FUNCTION(pcntl_exec)
+ 		} ZEND_HASH_FOREACH_END();
+ 		*(pair) = NULL;
+ 
+-		if (execve(path, argv, envp) == -1) {
++		if (execve(jpath, argv, envp) == -1) {
++			efree(jpath);
+ 			PCNTL_G(last_error) = errno;
+ 			php_error_docref(NULL, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror(errno));
+ 		}
+@@ -973,12 +984,14 @@ PHP_FUNCTION(pcntl_exec)
+ 		efree(envp);
+ 	} else {
+ 
+-		if (execv(path, argv) == -1) {
++		if (execv(jpath, argv) == -1) {
++			efree(jpath);
+ 			PCNTL_G(last_error) = errno;
+ 			php_error_docref(NULL, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror(errno));
+ 		}
+ 	}
+ 
++	efree(jpath);
+ 	efree(argv);
+ 
+ 	RETURN_FALSE;
+diff -urNp php-7.2.2.org/ext/standard/exec.c php-7.2.2/ext/standard/exec.c
+--- php-7.2.2.org/ext/standard/exec.c	2018-01-30 19:33:46.000000000 +0900
++++ php-7.2.2/ext/standard/exec.c	2018-02-07 20:47:56.845343786 +0900
+@@ -100,7 +100,7 @@ PHPAPI int php_exec(int type, char *cmd,
+ 	char *buf;
+ 	size_t l = 0;
+ 	int pclose_return;
+-	char *b, *d=NULL;
++	char *jcmd, *b=NULL, *d=NULL;
+ 	php_stream *stream;
+ 	size_t buflen, bufl = 0;
+ #if PHP_SIGCHILD
+@@ -111,15 +111,19 @@ PHPAPI int php_exec(int type, char *cmd,
+ 	sig_handler = signal (SIGCHLD, SIG_DFL);
+ #endif
+ 
++	jcmd = get_jailed_shell_cmd (cmd);
++
+ #ifdef PHP_WIN32
+-	fp = VCWD_POPEN(cmd, "rb");
++	fp = VCWD_POPEN(jcmd, "rb");
+ #else
+-	fp = VCWD_POPEN(cmd, "r");
++	fp = VCWD_POPEN(jcmd, "r");
+ #endif
+ 	if (!fp) {
+-		php_error_docref(NULL, E_WARNING, "Unable to fork [%s]", cmd);
++		php_error_docref(NULL, E_WARNING, "Unable to fork [%s]", jcmd);
++		efree(jcmd);
+ 		goto err;
+ 	}
++	efree(jcmd);
+ 
+ 	stream = php_stream_fopen_from_pipe(fp, "rb");
+ 
+@@ -473,6 +477,504 @@ PHPAPI zend_string *php_escape_shell_arg
+ }
+ /* }}} */
+ 
++/* {{{ +-- CmdArgv * cmdargv_init (void)
++ *
++ * memory allocation CmdArgv structure
++ */
++CmdArgv * cmdargv_init (void) {
++	CmdArgv * ret;
++
++	ret = emalloc (sizeof (CmdArgv) + 1);
++	ret->cmd  = NULL;
++	ret->clen = 0;
++	ret->argv = NULL;
++	ret->alen = 0;
++	ret->debug = 0;
++
++	return ret;
++}
++/* }}} */
++
++/* {{{ +-- void cmdargv_free (CmdArgv * v)
++ *
++ * memory free CmdArgv structure
++ */
++void cmdargv_free (CmdArgv * v) {
++	if ( v == NULL )
++		return;
++
++	if ( v->cmd != NULL )
++		efree (v->cmd);
++	if ( v->argv != NULL )
++		efree (v->argv);
++
++	efree (v);
++	v = NULL;
++}
++/* }}} */
++
++/* {{{ +-- CmdArgv make_cmdargv (char * cmd)
++ *
++ * saperate command and command arguments
++ */
++CmdArgv * make_cmdargv (char * cmd) {
++	int len = strlen (cmd);
++	int i   = 0;
++	char * path = cmd;
++	CmdArgv * ret = NULL;
++
++	//ret = cmdargv_init ();
++	ret = emalloc (sizeof (CmdArgv));
++	ret->cmd = NULL;
++	ret->clen = 0;
++	ret->argv = NULL;
++	ret->alen = 0;
++	ret->debug = 0;
++
++	// trim path
++	for ( i=0; i<len; i++ ) {
++		// 32 -> space, 9 -> tab
++		if ( cmd[i] == 32 || cmd[i] == 9 ) {
++			path = cmd + i + 1;
++			continue;
++		}
++		break;
++	}
++	len = strlen (path);
++
++	if ( strncmp ("DEBUG:", path, 6) == 0 ) {
++		ret->debug = 1;
++		path += 6;
++	} else if ( strncmp ("DDEBUG:", path, 7) == 0 ) {
++		ret->debug = 2;
++		path += 7;
++	}
++
++	// trim path again for DEBUG:
++	for ( i=0; i<len; i++ ) {
++		// 32 -> space, 9 -> tab
++		if ( path[i] == 32 || path[i] == 9 ) {
++			path += (i + 1);
++			continue;
++		}
++		break;
++	}
++	len = strlen (path);
++
++	if ( path[0] == '`' || (path[0] == '$' && path[1] == '(') ) {
++		ret->cmd  = estrdup (path);
++		ret->clen = strlen (path);
++
++		if ( ret->debug > 0 ) {
++			php_printf ("-- make_cmdargv ------\n");
++			php_printf ("Origianl : %s\n", cmd);
++			php_printf ("cmd      : %s (%d)\n", ret->cmd, ret->clen);
++			php_printf ("argv     : %s (%d)\n", ret->argv, ret->alen);
++			php_printf ("----------------------\n\n");
++		}
++
++		return ret;
++	}
++
++	for ( i=0; i<len; i++ ) {
++		// 32 -> space, 9 -> tab
++		if ( path[i] == 32 || path[i] == 9 || path[i] == ';' || path [i] == '|' || path[i] == '&' || path[i] == '>' ) {
++			// 92 -> back slash
++			if ( i == 0 || path[i-1] == 92 )
++				continue;
++
++			break;
++		}
++	}
++
++	ret->argv = estrdup (path + i);
++	{
++		char * npath = estrdup (path);
++		*(npath + i) = 0;
++		ret->alen = strlen (ret->argv);
++		ret->cmd  = estrdup (npath);
++		ret->clen = strlen (npath);
++		efree (npath);
++	}
++
++	if ( ret->debug > 0 ) {
++		php_printf ("-- make_cmdargv ------\n");
++		php_printf ("Origianl : %s\n", cmd);
++		php_printf ("cmd      : %s (%d)\n", ret->cmd, ret->clen);
++		php_printf ("argv     : %s (%d)\n", ret->argv, ret->alen);
++		php_printf ("----------------------\n\n");
++	}
++
++	return ret;
++}
++/* }}} */
++
++/* {{{ get_jailed_shell_cmd
++ */
++char *get_jailed_shell_cmd (char *cmd) {
++	size_t exec_len;
++	char *exec_dir;
++	char *_cmd;
++
++	exec_dir = PG(exec_dir);
++	exec_len = strlen (exec_dir);
++
++	if ( exec_len ) {
++		CmdArgv * cp;
++		char * c = NULL;
++		//char * tmp;
++		char * vcmd;
++		char * __cmd;
++
++		cp = make_cmdargv (cmd);
++
++		if ( cp->cmd[0] != '`' && cp->cmd[0] != '$' && (c = strrchr (cp->cmd, '/')) )
++			vcmd = c + 1;
++		else
++			vcmd = cp->cmd;
++
++		__cmd = emalloc (sizeof (char) * (cp->clen + cp->alen + 7 + 1));
++		memset (__cmd, 0, sizeof (char) * (cp->clen + cp->alen + 7 + 1));
++
++		sprintf (
++				__cmd, "%s%s%s",
++				cp->debug == 1 ? "DEBUG:" : (cp->debug == 2 ? "DDEBUG:" : ""),
++				vcmd,
++				cp->alen ? cp->argv : ""
++				);
++
++		cmdargv_free (cp);
++		_cmd = php_jailed_shell_cmd (__cmd, exec_dir);
++		efree (__cmd);
++	} else {
++		_cmd = estrdup (cmd);
++	}
++
++	//php_printf ("g **> %s\n", _cmd);
++
++	return _cmd;
++}
++/* }}} */
++
++/* {{{ check_quote_block
++ * case by single quote or double quote
++ * single quote (')  is digit 39
++ * double quote (")  is digit 34
++ * reverse slash (\) is digit 92
++ */
++int check_quote_block (struct quote_chk_char qc, struct quote_value *_qv) {
++	if ( qc.cur != 39 && qc.cur != 34 ) {
++		switch (qc.cur) {
++			case ';' :
++			case '|' :
++			case '`' :
++			case '$' :
++			case '&' :
++				if ( qc.mcur == 92 )
++					return 0;
++
++				if ( _qv->quote > 0 ) {
++					if ( _qv->dquote ) {
++						if ( _qv->bquote )
++							return 0;
++						else if ( _qv->daquote )
++							return 0;
++					}
++
++					return 1;
++				}
++		}
++		return 0;
++	}
++
++	if ( qc.mcur == 92 )
++		return 0;
++
++	if ( _qv->quote > 0 ) {
++		if ( qc.cur == 34 ) {
++			if ( _qv->squote ) return 0;
++		} else {
++			if ( _qv->dquote ) return 0;
++		}
++
++		_qv->quote  = 0;
++		_qv->squote = 0;
++		_qv->dquote = 0;
++	} else {
++		_qv->quote = 1;
++		if ( qc.cur == 34 ) {
++			_qv->dquote = 1;
++			_qv->squote = 0;
++		} else {
++			_qv->dquote = 0;
++			_qv->squote = 1;
++		}
++	}
++
++	return 0;
++}
++/* }}} */
++
++/* {{{ php_jailed_shell_cmd
++ */
++char *php_jailed_shell_cmd (char *cmd, char *path) {
++	int cmd_len  = 0;
++	int path_len = 0;
++	int buf_len  = 0;
++	int ep = 0;
++	int i, j, b, _len = 0;
++	char *buf;
++	char *_cmd, *x_cmd, *debug_cmd;
++	char *_path, *_tpath;
++	int _start;
++	int debug = 0;
++	int bskip = 0;
++	struct quote_value qv = { 0, 0, 0, 0, 0 };
++	struct quote_chk_char qc;
++
++	cmd_len = strlen (cmd);
++	debug_cmd = emalloc (sizeof (char *) * cmd_len + 1);
++	memset (debug_cmd, 0, cmd_len);
++	if ( ! strncmp ("DEBUG:", cmd, 6) ) {
++		debug = 1;
++		memcpy (debug_cmd, cmd + 6, cmd_len - 6);
++	} else if ( ! strncmp ("DDEBUG:", cmd, 7) ) {
++		debug = 2;
++		memcpy (debug_cmd, cmd + 7, cmd_len - 7);
++	} else {
++		debug_cmd = estrdup (cmd);
++	}
++
++	{
++		zend_string *zbuf, *zbuf_r;
++
++		zbuf = zend_string_init (path, strlen (path), 0);
++		zbuf_r = php_trim (zbuf, NULL, 0, 3);
++
++		_tpath = estrdup (ZSTR_VAL (zbuf_r));
++		zend_string_free (zbuf);
++		zend_string_free (zbuf_r);
++
++		zbuf = zend_string_init (debug_cmd, strlen (debug_cmd), 0);
++		zbuf_r = php_trim (zbuf, NULL, 0, 3);
++
++		x_cmd = estrdup (ZSTR_VAL (zbuf_r));
++		zend_string_free (zbuf);
++		zend_string_free (zbuf_r);
++	}
++
++	_cmd = ( x_cmd[0] == '/' ) ? estrdup (x_cmd + 1) : estrdup (x_cmd);
++
++
++	efree (x_cmd);
++	efree (debug_cmd);
++
++	cmd_len  = strlen(_cmd);
++	path_len = strlen (_tpath);
++
++	if ( path_len == 1 )
++		b = !strcmp (_tpath, "/") ? 0 : 1;
++	else if ( _tpath[path_len - 1] != '/' )
++		b = 1;
++	else
++		b = 0;
++
++	_path= emalloc (sizeof (char) * (cmd_len + path_len + 4));
++	memset (_path, 0, sizeof (char) * (cmd_len + path_len + 4));
++	sprintf (_path, "%s%s", _tpath, !b ? "" : "/");
++	path_len = strlen (_path);
++	efree (_tpath);
++
++	for ( i=0; i<cmd_len; i++ ) {
++		switch (_cmd[i]) {
++			case ';' :
++			case '|' :
++			case '`' :
++			case '$' :
++			case '&' :
++				_len++;
++				break;
++		}
++	}
++
++	_len++;
++	buf_len = sizeof (char *) * (cmd_len + ((path_len + 2) * _len));
++	buf = emalloc (buf_len);
++	memset (buf, 0, buf_len);
++
++	if ( _cmd[0] != ';' )
++		memcpy (buf, _path, path_len);
++	ep = strlen (buf);
++
++	_len      = 0;
++	_start    = 0;
++
++	if ( debug )
++		php_printf ("p **> %s\n", _cmd);
++
++	for ( i=0; i<cmd_len; i++ ) {
++roopstart:
++		if ( debug > 1 ) {
++			php_printf ("#### "
++						"_cmd[i] => %c : "
++						"i => %2d : "
++						"cmd_len => %2d : "
++						"_start => %2d : "
++						"quote => %2d : "
++						"squote => %2d : "
++						"dquote => %2d : "
++						"bquote => %2d : "
++						"daquote => %2d\n",
++						_cmd[i], i, cmd_len, _start,
++						qv.quote, qv.squote, qv.dquote, qv.bquote, qv.daquote);
++		}
++
++		qc.mcur = _cmd[i-1];
++		qc.cur  = _cmd[i];
++		qc.acur = _cmd[i+1];
++
++		if ( qc.mcur != '\\' && qc.cur == '`' ) {
++			if ( ! qv.bquote ) qv.bquote = 1;
++			else qv.bquote = 0;
++		}
++
++		if ( qc.mcur != '\\' && qc.cur == '$' && qc.acur == '(' ) {
++			qv.daquote = 1;
++		} else if ( qv.daquote && qc.mcur != '\\' && qc.cur == ')' ) {
++			qv.daquote = 0;
++		}
++
++		if ( i == cmd_len - 1 && _start <= i ) {
++			memcpy (buf + ep, _cmd + _start, i - _start + 1);
++			break;
++		}
++
++		if ( check_quote_block (qc, &qv) ) {
++			i++;
++			goto roopstart;
++		}
++
++		switch (_cmd[i]) {
++			case ';' :
++			case '|' :
++			case '`' :
++			case '$' :
++			case '&' :
++				if ( _cmd[i-1] == '\\' || (_cmd[i] == '&' && (_cmd[i-1] == '>' || _cmd[i+1] == '>')) ) {
++					i++;
++					goto roopstart;
++				}
++
++				if ( ! bskip )
++					memcpy (buf + ep, _cmd + _start, i - _start + 1);
++				else {
++					memset (buf + ep, _cmd[i], 1);
++					bskip = 0;
++				}
++				_start = i + 1;
++				ep = strlen (buf);
++
++				/*
++				if ( _cmd[i] == '`' && ! qv.bquote ) qv.bquote = 1;
++				else if ( _cmd[i] == '`' && qv.bquote ) {
++					qv.bquote = 0;
++					i++;
++
++					goto roopstart;
++				}
++				*/
++				if ( _cmd[i] == '`' && ! qv.bquote ) {
++					i++;
++					goto roopstart;
++				}
++
++				// if not case of $() or && or ||, skip
++				if ( _cmd[i] == '$' && _cmd[i+1] != '(' && ! qv.daquote ) {
++					i += 2;
++					goto roopstart;
++				}
++
++				// if case of `` or ;; that include any charactors, skip
++				if ( (_cmd[i] == ';' && _cmd[i+1] == ';') || (_cmd[i] == '`' && _cmd[i+1] == '`') ) {
++					i++;
++					goto roopstart;
++				}
++
++				i++;
++				if ( (_cmd[i] == '(' && _cmd[i-1] == '$') || (_cmd[i] == '&' && _cmd[i-1] == '&') ||
++					 (_cmd[i] == '|' && _cmd[i-1] == '|') ) {
++					memset (buf + ep, _cmd[i], 1);
++					_start++;
++					ep++;
++					i++;
++				}
++
++				for ( j=i; j<cmd_len; j++ ) {
++					// blank ( ) => 32
++					// tab (\t)  => 9
++					if ( _cmd[j] == 32 || _cmd[j] == 9 ) {
++						memset (buf + ep, _cmd[j], 1);
++						_start++;
++						ep++;
++						i++;
++					} else {
++						int y;
++						int _vcmd_len = 0;
++						char vcmd[256] = { 0, };
++						char *_vcmd = NULL;
++						char *_tvcmd = NULL;
++
++						for ( y=j; y<cmd_len; y++ ) {
++							// if path include backticks (/bin/`echo /bin/ls`)
++							//php_printf ("+ %c\n", _cmd[y]);
++							if ( (! qv.bquote && _cmd[y] == '`') || (! qv.daquote && _cmd[y] == '$' && _cmd[y+1] == '(') ) {
++								memcpy (buf + ep, path, path_len);
++								ep = strlen (buf);
++								memset (buf + ep, '/', 1);
++								ep++;
++								//php_printf ("~~~~~~~~~~~hel\n");
++								i = y;
++								bskip++;
++								goto roopstart;
++							}
++
++							// blank ( ) => 32
++							// tab (\t)  => 9
++							if ( _cmd[y] == 32 || _cmd[y] == 9 || (qv.bquote && _cmd[y] == '`') ) {
++									memcpy (vcmd, _cmd + j, y - j );
++									_tvcmd = strrchr (vcmd, '/');
++									_vcmd = _tvcmd ? _tvcmd + 1 : vcmd;
++									_vcmd_len = strlen (_vcmd);
++									i = y;
++
++									//php_printf ("***** => %s : %s, %d, %d\n", vcmd, _vcmd, qv.bquote, i);
++									if ( _cmd[y] == '`' )
++										 qv.bquote = 0;
++
++									break;
++							}
++						}
++						memcpy (buf + ep, _path, path_len);
++						memcpy (buf + ep + path_len, _vcmd, _vcmd_len);
++						ep += path_len + _vcmd_len;
++						_start = i;
++						break;
++					}
++				}
++				break;
++		}
++	}
++
++	if ( debug )
++		 php_printf ("p ==> %s\n--\n", buf);
++
++	efree (_cmd);
++	efree (_path);
++
++	return buf; 
++}
++/* }}} */
++
+ /* {{{ proto string escapeshellcmd(string command)
+    Escape shell metacharacters */
+ PHP_FUNCTION(escapeshellcmd)
+@@ -525,20 +1027,29 @@ PHP_FUNCTION(shell_exec)
+ 	char *command;
+ 	size_t command_len;
+ 	zend_string *ret;
++	char *jcommand;
+ 	php_stream *stream;
+ 
+ 	ZEND_PARSE_PARAMETERS_START(1, 1)
+ 		Z_PARAM_STRING(command, command_len)
+ 	ZEND_PARSE_PARAMETERS_END();
+ 
++	if (strlen(command) != command_len) {
++		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
++		RETURN_FALSE;
++	}
++
++	jcommand = get_jailed_shell_cmd (command);
+ #ifdef PHP_WIN32
+-	if ((in=VCWD_POPEN(command, "rt"))==NULL) {
++	if ((in=VCWD_POPEN(jcommand, "rt"))==NULL) {
+ #else
+-	if ((in=VCWD_POPEN(command, "r"))==NULL) {
++	if ((in=VCWD_POPEN(jcommand, "r"))==NULL) {
+ #endif
+-		php_error_docref(NULL, E_WARNING, "Unable to execute '%s'", command);
++		php_error_docref(NULL, E_WARNING, "Unable to execute '%s'", jcommand);
++		efree(jcommand);
+ 		RETURN_FALSE;
+ 	}
++	efree(jcommand);
+ 
+ 	stream = php_stream_fopen_from_pipe(in, "rb");
+ 	ret = php_stream_copy_to_mem(stream, PHP_STREAM_COPY_ALL, 0);
+diff -urNp php-7.2.2.org/ext/standard/exec.h php-7.2.2/ext/standard/exec.h
+--- php-7.2.2.org/ext/standard/exec.h	2018-01-30 19:33:46.000000000 +0900
++++ php-7.2.2/ext/standard/exec.h	2018-02-07 20:47:56.846343839 +0900
+@@ -35,8 +35,33 @@ PHP_FUNCTION(proc_nice);
+ PHP_MINIT_FUNCTION(proc_open);
+ PHP_MINIT_FUNCTION(exec);
+ 
++struct quote_value {
++	int quote;
++	int squote;
++	int dquote;
++	int bquote;
++	int daquote;
++};
++
++struct quote_chk_char {
++	char mcur;
++	char cur;
++	char acur;
++};
++
++typedef struct cmd_argv {
++	char * cmd;
++	int    clen;
++	char * argv;
++	int    alen;
++	int    debug;
++} CmdArgv;
++
+ PHPAPI zend_string *php_escape_shell_cmd(char *);
+ PHPAPI zend_string *php_escape_shell_arg(char *);
++char *get_jailed_shell_cmd (char *);
++char *php_jailed_shell_cmd (char *, char *);
++int check_quote_block (struct quote_chk_char, struct quote_value *);
+ PHPAPI int php_exec(int type, char *cmd, zval *array, zval *return_value);
+ 
+ #endif /* EXEC_H */
+diff -urNp php-7.2.2.org/ext/standard/file.c php-7.2.2/ext/standard/file.c
+--- php-7.2.2.org/ext/standard/file.c	2018-01-30 19:33:46.000000000 +0900
++++ php-7.2.2/ext/standard/file.c	2018-02-07 20:47:56.846343839 +0900
+@@ -926,7 +926,7 @@ PHPAPI PHP_FUNCTION(fclose)
+    Execute a command and open either a read or a write pipe to it */
+ PHP_FUNCTION(popen)
+ {
+-	char *command, *mode;
++	char *command, *jcmd, *mode;
+ 	size_t command_len, mode_len;
+ 	FILE *fp;
+ 	php_stream *stream;
+@@ -937,6 +937,11 @@ PHP_FUNCTION(popen)
+ 		Z_PARAM_STRING(mode, mode_len)
+ 	ZEND_PARSE_PARAMETERS_END();
+ 
++	if (strlen(command) != command_len) {
++		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
++		RETURN_FALSE;
++	}
++
+ 	posix_mode = estrndup(mode, mode_len);
+ #ifndef PHP_WIN32
+ 	{
+@@ -947,7 +952,10 @@ PHP_FUNCTION(popen)
+ 	}
+ #endif
+ 
+-	fp = VCWD_POPEN(command, posix_mode);
++	jcmd = get_jailed_shell_cmd (command);
++	fp = VCWD_POPEN(jcmd, posix_mode);
++	efree (jcmd);
++
+ 	if (!fp) {
+ 		php_error_docref2(NULL, command, posix_mode, E_WARNING, "%s", strerror(errno));
+ 		efree(posix_mode);
+diff -urNp php-7.2.2.org/ext/standard/proc_open.c php-7.2.2/ext/standard/proc_open.c
+--- php-7.2.2.org/ext/standard/proc_open.c	2018-01-30 19:33:46.000000000 +0900
++++ php-7.2.2/ext/standard/proc_open.c	2018-02-07 20:47:56.847343892 +0900
+@@ -406,7 +406,7 @@ struct php_proc_open_descriptor_item {
+    Run a process with more control over it's file descriptors */
+ PHP_FUNCTION(proc_open)
+ {
+-	char *command, *cwd=NULL;
++	char *command, *jcommand, *cwd=NULL;
+ 	size_t command_len, cwd_len = 0;
+ 	zval *descriptorspec;
+ 	zval *pipes;
+@@ -455,7 +455,14 @@ PHP_FUNCTION(proc_open)
+ 		Z_PARAM_ARRAY_EX(other_options, 1, 0)
+ 	ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
+ 
+-	command = pestrdup(command, is_persistent);
++	if (strlen(command) != command_len) {
++		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
++		RETURN_FALSE;
++	}
++
++	jcommand = get_jailed_shell_cmd (command);
++	command = pestrdup(jcommand, is_persistent);
++	efree (jcommand);
+ 
+ #ifdef PHP_WIN32
+ 	if (other_options) {
+diff -urNp php-7.2.2.org/main/main.c php-7.2.2/main/main.c
+--- php-7.2.2.org/main/main.c	2018-01-30 19:33:51.000000000 +0900
++++ php-7.2.2/main/main.c	2018-02-07 20:47:56.848343945 +0900
+@@ -531,6 +531,10 @@ PHP_INI_MH(OnChangeBrowscap);
+  * PHP_INCLUDE_PATH
+  */
+ 
++#ifndef PHP_EXEC_DIR
++#  define PHP_EXEC_DIR ""
++#endif
++
+  /* Windows use the internal mail */
+ #if defined(PHP_WIN32)
+ # define DEFAULT_SENDMAIL_PATH NULL
+@@ -593,6 +597,7 @@ PHP_INI_BEGIN()
+ 	STD_PHP_INI_ENTRY("include_path",			PHP_INCLUDE_PATH,		PHP_INI_ALL,		OnUpdateStringUnempty,	include_path,			php_core_globals,	core_globals)
+ 	PHP_INI_ENTRY("max_execution_time",			"30",		PHP_INI_ALL,			OnUpdateTimeout)
+ 	STD_PHP_INI_ENTRY("open_basedir",			NULL,		PHP_INI_ALL,		OnUpdateBaseDir,			open_basedir,			php_core_globals,	core_globals)
++	STD_PHP_INI_ENTRY("exec_dir",				PHP_EXEC_DIR,			PHP_INI_SYSTEM,		OnUpdateString,			exec_dir,				php_core_globals,	core_globals)
+ 
+ 	STD_PHP_INI_BOOLEAN("file_uploads",			"1",		PHP_INI_SYSTEM,		OnUpdateBool,			file_uploads,			php_core_globals,	core_globals)
+ 	STD_PHP_INI_ENTRY("upload_max_filesize",	"2M",		PHP_INI_SYSTEM|PHP_INI_PERDIR,		OnUpdateLong,			upload_max_filesize,	php_core_globals,	core_globals)
+diff -urNp php-7.2.2.org/main/php_config.h.in php-7.2.2/main/php_config.h.in
+--- php-7.2.2.org/main/php_config.h.in	2018-01-30 19:33:51.000000000 +0900
++++ php-7.2.2/main/php_config.h.in	2018-02-07 20:47:56.849343998 +0900
+@@ -2357,6 +2357,9 @@
+ #undef PHP_PWRITE_64
+ 
+ /* */
++#undef PHP_EXEC_DIR
++
++/* */
+ #undef PHP_SIGCHILD
+ 
+ /* uname -a output */
+diff -urNp php-7.2.2.org/main/php_globals.h php-7.2.2/main/php_globals.h
+--- php-7.2.2.org/main/php_globals.h	2018-01-30 19:33:51.000000000 +0900
++++ php-7.2.2/main/php_globals.h	2018-02-07 20:47:56.849343998 +0900
+@@ -163,6 +163,8 @@ struct _php_core_globals {
+ 
+ 	zend_bool in_error_log;
+ 
++	char *exec_dir;
++
+ #ifdef PHP_WIN32
+ 	zend_bool windows_show_crt_warning;
+ #endif
+diff -urNp php-7.2.2.org/php.ini-development php-7.2.2/php.ini-development
+--- php-7.2.2.org/php.ini-development	2018-01-30 19:33:51.000000000 +0900
++++ php-7.2.2/php.ini-development	2018-02-07 20:47:56.850344051 +0900
+@@ -297,6 +297,11 @@ unserialize_callback_func =
+ ; precision.
+ serialize_precision = -1
+ 
++; only executables located in the exec_dir will be allowed to be executed
++; via the exec family of functions. This is only AnNyung LInux patch
++; see also https://github.com/OOPS-ORG-PHP/mod_execdir/
++exec_dir =
++
+ ; open_basedir, if set, limits all file operations to the defined directory
+ ; and below.  This directive makes most sense if used in a per-directory
+ ; or per-virtualhost web server configuration file.
+diff -urNp php-7.2.2.org/php.ini-production php-7.2.2/php.ini-production
+--- php-7.2.2.org/php.ini-production	2018-01-30 19:33:51.000000000 +0900
++++ php-7.2.2/php.ini-production	2018-02-07 20:47:56.850344051 +0900
+@@ -302,6 +302,11 @@ unserialize_callback_func =
+ ; precision.
+ serialize_precision = -1
+ 
++; only executables located in the exec_dir will be allowed to be executed 
++; via the exec family of functions. This is only AnNyung LInux patch
++; see also https://github.com/OOPS-ORG-PHP/mod_execdir/
++exec_dir =
++
+ ; open_basedir, if set, limits all file operations to the defined directory
+ ; and below.  This directive makes most sense if used in a per-directory
+ ; or per-virtualhost web server configuration file.
