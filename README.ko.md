@@ -14,9 +14,9 @@ This program is under PHP License.
 
 이 기능은 PHP 5.4 이전의 ***safe_mode_exec_dir*** 기능을 향상 구현한 것입니다.
 
-***safe_mode_exec_dir*** 기능은 오직 ***SAFE MODE***에서만 사용이 가능하며, PHP 5.4 이후 부터는 ***SAFE MODE***가 제거 되면서 더 이상 사용을 할 수가 없습니다. 또한, ***safe_mode_exec_dir***의 parser는 너무나 간단하게 되어 있어 사용을 하기에 제약이 많았습니다.
+***safe_mode_exec_dir*** 기능은 오직 ***SAFE MODE*** 에서만 사용이 가능하며, PHP 5.4 이후 부터는 ***SAFE MODE*** 가 제거 되면서 더 이상 사용을 할 수가 없습니다. 또한, ***safe_mode_exec_dir*** 의 parser는 너무나 간단하게 되어 있어 사용을 하기에 제약이 많았습니다.
 
-execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하여, ***SAFE MODE***가 아니고, 또한 PHP 5.4 이후 버전에서도 사용할 수 있도록 지원을 합니다.
+execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하여, ***SAFE MODE*** 가 아니고, 또한 PHP 5.4 이후 버전에서도 사용할 수 있도록 지원을 합니다.
 
 2005년 5월 PHPBB의 <u>highlight syntax security hole</u> 때문에 만들어 졌으며, 대형 비지니스 사이트와 안녕 리눅스 배포본에 적용이 되어 10년 이상 검증이 되었습니다.
 
@@ -61,7 +61,7 @@ PHP 확장 모듈의 경우, PHP 5 호환 코드로 작성 하였지만, 실제 
 [root@host mod_execdir]$ make install
 ```
 
-***configure***시에 ***--with-execdir*** 옵션을 이용하여 jail을 시킬 기본 디렉토리를 지정할 수 있습니다.
+***configure*** 시에 ***--with-execdir*** 옵션을 이용하여 jail을 시킬 기본 디렉토리를 지정할 수 있습니다.
 
 ## 4.Usage
 
@@ -72,7 +72,14 @@ PHP 확장 모듈의 경우, PHP 5 호환 코드로 작성 하였지만, 실제 
 php.ini에 다음의 설정을 추가 합니다. php 동적 확장으로 빌드를 했을 경우에는 execdir.so 를 php.ini에서 로딩해 줘야 합니다.
 
 ```ini
+; for php 7.1 and before
 extension = execdir.so
+
+; for php 7.2 and after
+; default extension dir
+extension = execdir
+; use absolute path
+extension = /path/execdir.so
 ```
 
 이 모듈은 기존의 system 함수들을 바꿔치기 하는 것이므로, 가장 마지막에 로딩되도록 추가해 줍니다.
@@ -88,7 +95,7 @@ extension = execdir.so
 exec_dir = /var/lib/php/bin
 ```
 
-아래와 같이 ***exec_dir*** 옵션이 설정이 되어 있지 않을 경우에는, ***configure***시에 지정한 ***--with-execdir*** 값이 사용이 됩니다. ***configure*** 시에 ***--with-execdir*** 옵션을 주지 않았다면, 이 경우 ***exec_dir***의 값은 빈 값이 됩니다.
+아래와 같이 ***exec_dir*** 옵션이 설정이 되어 있지 않을 경우에는, ***configure*** 시에 지정한 ***--with-execdir*** 값이 사용이 됩니다. ***configure*** 시에 ***--with-execdir*** 옵션을 주지 않았다면, 이 경우 ***exec_dir*** 의 값은 빈 값이 됩니다.
 
 ```ini
 ; only executables located in the exec_dir will be allowed to be executed
@@ -108,7 +115,7 @@ exec_dir =
 
 #### 4.1.3 Apache VirtualHost
 
-***PHP***를 ***apache module***로 사용할 경우 ***php_admin_value*** 지시자를 이용하여 가상 호스트마다 설정을 다르게 할 수 있습니다.
+***PHP*** 를 ***apache module*** 로 사용할 경우 ***php_admin_value*** 지시자를 이용하여 가상 호스트마다 설정을 다르게 할 수 있습니다.
 ```apache
 <VirtualHost *:80>
     ServerName domain.com
@@ -131,11 +138,11 @@ exec_dir =
 
 이 설정을 응용하면 ```<Directory>```, ```<Location>``` 등의 블럭에서도 사용이 가능 합니다.
 
-***exec_dir*** 옵션은 ***PHP_INI_SYSTEM***으로 할당이 되어 있기 때문에, ***.htaccess*** 에서는 사용이 불가능 합니다.
+***exec_dir*** 옵션은 ***PHP_INI_SYSTEM*** 으로 할당이 되어 있기 때문에, ***.htaccess*** 에서는 사용이 불가능 합니다.
 
 #### 4.1.4 PHP FPM pool
 
-***PHP***를 ***fpm*** 모드로 사용할 경우에는, FPM pool 별로 설정이 가능 합니다.
+***PHP*** 를 ***fpm*** 모드로 사용할 경우에는, FPM pool 별로 설정이 가능 합니다.
 
 ```ini
 [www]
@@ -214,6 +221,8 @@ var_dump ($o);
   * proc_terminate_orig
   * proc_get_status_orig
 
+이 기능은 ```1.0.2``` 부터는 ***configure*** 시에 ***--enable-execdir-addon*** 옵션을 주어야 호출할 수 있습니다.
+
 #### 4.3.2. mod_execdir APIs
 
   * ***exec_re*** : mapping ***exec*** function
@@ -229,32 +238,35 @@ var_dump ($o);
     ***pcntl_exec*** 함수 호출 에러시에, ***pcntl_get_last_error()*** 함수를 사용할 수 없습니다. 그러므로, 다음과 같이 약간의 소스 수정이 필요 합니다.  
     ***이전:***  
 
-  ```php
-  <?php
-  if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
-      echo pcntl_strerror (pcntl_get_last_error ()) . "\n"
-  }
-  ```
+    ```php
+    <?php
+    if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
+        echo pcntl_strerror (pcntl_get_last_error ()) . "\n"
+    }
+    ?>
+    ```
     ***이후:***  
-    
-  ```php
-  ini_set ('track_errors', true);
-  if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
-      echo $php_errormsg . "\n";
-  }
-  ```
+
+    ```php
+    <?php
+    ini_set ('track_errors', true);
+    if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
+        echo $php_errormsg . "\n";
+    }
+    ?>
+    ```
   * ***jailed_shellcmd*** : return jailed shell command strings
-  ```
-  Prototype: (string) jailed_shellcmd (string path)
-  ```
+    ```
+    Prototype: (string) jailed_shellcmd (string path)
+    ```
   
-  ```php
-  <?php
-  # 다음 코드는 system(command) 과 동일하게 동작
-  $jcmd = jailed_shellcmd ('/bin/ls');
-  system_orig ($jcmd);
-  ?>
-  ```
+    ```php
+    <?php
+    # 다음 코드는 system(command) 과 동일하게 동작
+    $jcmd = jailed_shellcmd ('/bin/ls');
+    system_orig ($jcmd);
+    ?>
+    ```
 
 
 ## 5.Contributors

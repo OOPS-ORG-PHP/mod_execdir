@@ -77,7 +77,14 @@ At ***configure*** time, you can use the ***--with-execdir*** option to specify 
 If build with PHP dynamic extension, you will need to load ***execdir.so*** file in ***php.ini***. Add follow configuration in th php.ini.
 
 ```ini
+; for php 7.1 and before
 extension = execdir.so
+
+; for php 7.2 and after
+; default extension dir
+extension = execdir
+; use absolute path
+extension = /path/execdir.so
 ```
 
 This extension replaces the existing functions, so it is recommended that you last loaded.
@@ -201,7 +208,7 @@ The following case is applied with building in mod_execdir as PHP dynamic extens
 
 #### 4.3.1. Original functions
 
-You can call original functions with "***_orig***" postfix.
+You can call original functions with ***_orig*** postfix.
 
 ```php
 <?php
@@ -222,6 +229,8 @@ The list of original functions is follow:
   * proc_terminate_orig
   * proc_get_status_orig
 
+These functions can be called from ```1.0.2``` only by giving ***--enable-execdir-addon*** option at ***configure***.
+
 #### 4.3.2. mod_execdir APIs
 
   * ***exec_re*** : mapping ***exec*** function
@@ -238,32 +247,33 @@ The list of original functions is follow:
     Can not use ***pcntl_get_last_error()*** fucntion, if call failed ***pcntl_exec***, so Need to modify your code as follows:  
     ***Before:***  
 
-  ```php
-  <?php
-  if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
-      echo pcntl_strerror (pcntl_get_last_error ()) . "\n"
-  }
-  ```
+    ```php
+    <?php
+    if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
+        echo pcntl_strerror (pcntl_get_last_error ()) . "\n"
+    }
+    ?>
+    ```
     ***After:***  
     
-  ```php
-  ini_set ('track_errors', true);
-  if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
-      echo $php_errormsg . "\n";
-  }
-  ```
+    ```php
+    ini_set ('track_errors', true);
+    if ( ($r = @pcntl_exec ('/bin/cat', array ('/etc/hosts')) === false ) {
+        echo $php_errormsg . "\n";
+    }
+    ```
   * ***jailed_shellcmd*** : return jailed shell command strings
-  ```
-  Prototype: (string) jailed_shellcmd (string path)
-  ```
+    ```
+    Prototype: (string) jailed_shellcmd (string path)
+    ```
   
-  ```php
-  <?php
-  # Follow codes has same operation with "system(command)"
-  $jcmd = jailed_shellcmd ('/bin/ls');
-  system_orig ($jcmd);
-  ?>
-  ```
+    ```php
+    <?php
+    # Follow codes has same operation with "system(command)"
+    $jcmd = jailed_shellcmd ('/bin/ls');
+    system_orig ($jcmd);
+    ?>
+    ```
 
 ## 5. Contributors
 JoungKyun.Kim
