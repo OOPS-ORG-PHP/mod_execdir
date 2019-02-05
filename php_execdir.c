@@ -30,6 +30,7 @@
 #include "php_ini.h"
 #include "SAPI.h"
 #include "ext/standard/exec.h"
+#include "ext/standard/info.h"
 
 #include "php_execdir.h"
 
@@ -201,7 +202,6 @@ static int safe_hook_execdir (void) {
 	int    entno = sizeof (execdir_list) / sizeof (char *);
 	int    i, funclen;
 	char * func;
-	zend_function * zf;
 	TSRMLS_FETCH ();
 
 	for ( i=0; i<entno; i++ ) {
@@ -356,6 +356,8 @@ PHP_MINIT_FUNCTION (execdir)
 	// On cli mode, jailed_shell_cmd does nothing to do.
 	//if ( strcmp (sapi_module.name, "cli") != 0 )
 	safe_hook_execdir ();
+
+	return SUCCESS;
 }
 /* }}} */
 
@@ -434,9 +436,9 @@ PHP_FUNCTION (passthru_re)
 PHP_FUNCTION (shell_exec_re)
 {
 	FILE        * in;
-	size_t        total_readbytes;
 	char        * command, * jcommand;
 #if PHP_VERSION_ID < 60000
+	size_t        total_readbytes;
 	int           command_len;
 	char        * ret;
 #else

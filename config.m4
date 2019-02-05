@@ -17,6 +17,7 @@ PHP_ARG_WITH(
 
 if test "$PHP_EXECDIR" != "no"; then
 	AC_DEFINE(HAVE_EXECDIR, 1, [ ])
+	CFLAGS="${CFLAGS} -Wall"
 
 	PHP_SUBST(LDFLAGS)
 	PHP_SUBST(CPPFLAGS)
@@ -35,5 +36,7 @@ if test "$PHP_EXECDIR" != "no"; then
 		AC_DEFINE([PHP_EXECDIR_COMPAT], [], [Support original system function with _orig suffix])
 	fi
 
-	PHP_NEW_EXTENSION(execdir, php_execdir.c execdirapi.c proc_open.c proc_open5.c proc_open53.c, $ext_shared)
+	sources="php_execdir.c execdirapi.c proc_open.c proc_open5.c proc_open53.c"
+
+	PHP_NEW_EXTENSION(execdir, $sources, $ext_shared,, \\$(CFALGS))
 fi
