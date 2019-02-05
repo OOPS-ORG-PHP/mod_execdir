@@ -1,5 +1,12 @@
 
 if [ "$1" = "package" ]; then
+	curdate=$(date "+%Y-%m-%d")
+	curtime=$(date "+%H:%M:%S")
+
+	cp -af package.xml.template package.xml
+	perl -pi -e "s/\@curdate\@/${curdate}/g" package.xml
+	perl -pi -e "s/\@curtime\@/${curtime}/g" package.xml
+
 	list="README.md README.ko.md config.m4 execdirapi.c execdirapi.h php_execdir.c php_execdir.h proc_open.c proc_open5.c proc_open53.c"
 
 	for i in ${list}
@@ -20,6 +27,7 @@ if [ "$1" = "package" ]; then
 	done
 
 	pecl package
+	rm -f package.xml
 	exit 0
 fi
 
