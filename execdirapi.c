@@ -326,15 +326,15 @@ static char * php_jailed_shell_cmd (char * cmd, char * path) {
 		zbuf_r = php_trim (zbuf, NULL, 0, 3);
 
 		_tpath = estrdup (ZSTR_VAL (zbuf_r));
-		zend_string_free (zbuf);
-		zend_string_free (zbuf_r);
+		execdir_string_release (zbuf);
+		execdir_string_release (zbuf_r);
 
 		zbuf = zend_string_init (debug_cmd, strlen (debug_cmd), 0);
 		zbuf_r = php_trim (zbuf, NULL, 0, 3);
 
 		x_cmd = estrdup (ZSTR_VAL (zbuf_r));
-		zend_string_free (zbuf);
-		zend_string_free (zbuf_r);
+		execdir_string_release (zbuf);
+		execdir_string_release (zbuf_r);
 
 		_cmd = ( x_cmd[0] == '/' ) ? estrdup (x_cmd + 1) : estrdup (x_cmd);
 #endif

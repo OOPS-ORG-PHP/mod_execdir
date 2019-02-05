@@ -696,7 +696,7 @@ PHP_FUNCTION (pcntl_exec_re)
 			strlcat (*pair, Z_STRVAL_P (element), pair_length);
 
 			/* Cleanup */
-			zend_string_release (key);
+			execdir_string_release (key);
 			envi++;
 			pair++;
 		} ZEND_HASH_FOREACH_END ();

@@ -80,6 +80,12 @@ PHP_FUNCTION (proc_terminate_re);
 	#define execdir_hash_exists(ht,key) zend_hash_str_exists(ht,key,strlen(key))
 #endif
 
+#if PHP_VERSION_D < 70300
+	#define execdir_string_release(x) zend_string_release(x)
+#else
+	#define execdir_string_release(x) zend_string_release_ex(x,0)
+#endif
+
 #endif /* PHP_EXECDIR_H */
 
 /*
