@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<package packagerversion="1.0.0" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
-	http://pear.php.net/dtd/tasks-1.0.xsd
-	http://pear.php.net/dtd/package-2.0
-	http://pear.php.net/dtd/package-2.0.xsd">
+<package packagerversion="1.10.6" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0 http://pear.php.net/dtd/tasks-1.0.xsd http://pear.php.net/dtd/package-2.0 http://pear.php.net/dtd/package-2.0.xsd">
 	<name>execdir</name>
 	<channel>pecl.php.net</channel>
 	<summary>execdir - jailed system command</summary>
@@ -14,8 +11,8 @@
 		<email>joungkyun@daum.net</email>
 		<active>yes</active>
 	</lead>
-	<date>2018-02-10</date>
-	<time>02:38:20</time>
+	<date>2019-02-06</date>
+	<time>04:40:54</time>
 	<version>
 		<release>1.0.4</release>
 		<api>1.0.0</api>
@@ -26,37 +23,40 @@
 	</stability>
 	<license uri="http://www.php.net/license">PHP</license>
 	<notes>
-		- fixed #21 confirm php 7.2 support
+		- fixed #24 support PHP 7.3
 	</notes>
 	<contents>
 		<dir name="/">
-			<file name="config.m4" role="src" />
-			<file name="README.md" role="doc" />
-			<file name="README.ko.md" role="doc" />
-			<file name="execdirapi.c" role="src" />
-			<file name="execdirapi.h" role="src" />
-			<file name="php_execdir.c" role="src" />
-			<file name="php_execdir.h" role="src" />
-			<file name="proc_open.c" role="src" />
-			<file name="proc_open5.c" role="src" />
-			<file name="proc_open53.c" role="src" />
+			<file md5sum="95dd40b16640dca92d64a4cd46f6f966" name="README.md" role="doc" />
+			<file md5sum="95c000d198c704c24ca5fee53a0de9fa" name="README.ko.md" role="doc" />
+			<file md5sum="4deb07af30ab68918628539a1fdf97c9" name="config.m4" role="src" />
+			<file md5sum="2b8e216873df653a739d8cef46efde57" name="execdirapi.c" role="src" />
+			<file md5sum="ffa04f87c7cb5abd09c796cd62950582" name="execdirapi.h" role="src" />
+			<file md5sum="0ae18cc5cc73c97de65b1343615b8235" name="php_execdir.c" role="src" />
+			<file md5sum="c5a511735253a9387fdeada9af80995a" name="php_execdir.h" role="src" />
+			<file md5sum="a15b57a57615674b142e109770f71ca5" name="proc_open.c" role="src" />
+			<file md5sum="1b2d2ad91f389fbcf773c9f5dc1f0618" name="proc_open5.c" role="src" />
+			<file md5sum="416a759e6924ee80625b2465fea17413" name="proc_open53.c" role="src" />
 			<dir name="tests">
-				<file name="000-jailed_shellcmd.phpt" role="test" />
-				<file name="001-exec-failed.phpt" role="test" />
-				<file name="001-exec-normal.phpt" role="test" />
-				<file name="002-system-failed.phpt" role="test" />
-				<file name="002-system-normal.phpt" role="test" />
-				<file name="003-passthru-failed.phpt" role="test" />
-				<file name="003-passthru-normal.phpt" role="test" />
-				<file name="004-shell_exec-failed.phpt" role="test" />
-				<file name="004-shell_exec-normal.phpt" role="test" />
-				<file name="005-popen-failed.phpt" role="test" />
-				<file name="005-popen-normal.phpt" role="test" />
-				<file name="006-proc_open-failed.phpt" role="test" />
-				<file name="006-proc_open-normal.phpt" role="test" />
-				<file name="007-pcntl_exec-failed.phpt" role="test" />
-				<file name="007-pcntl_exec-normal.phpt" role="test" />
-				<file name="data.txt" role="doc" />
+				<file md5sum="d9f9601c74ca3dff79595d0cf33c51b3" name="000-jailed_shellcmd.phpt" role="test" />
+				<file md5sum="920895eb585e2770e8fbd5ee4dd712c0" name="001-exec-failed.phpt" role="test" />
+				<file md5sum="dda263523fb9ee0b02d3edc8563628e7" name="001-exec-normal.phpt" role="test" />
+				<file md5sum="0b1895dcffd6d1d48deaeb22c666e670" name="002-system-failed.phpt" role="test" />
+				<file md5sum="1e3d013007c16fbfd3e2984cc724e682" name="002-system-normal.phpt" role="test" />
+				<file md5sum="414b083d31f68795b0e3d925069efa0e" name="003-passthru-failed.phpt" role="test" />
+				<file md5sum="382d71ef86748bde32d3d592529f62da" name="003-passthru-normal.phpt" role="test" />
+				<file md5sum="315d36b643457810d45723d52b9d30b4" name="004-shell_exec-failed.phpt" role="test" />
+				<file md5sum="9f4311189bf9b46fbf8ce50a25958e1a" name="004-shell_exec-normal.phpt" role="test" />
+				<file md5sum="72525e30543e7dd4df051f06a3852d33" name="005-popen-failed.phpt" role="test" />
+				<file md5sum="37ca298968443b9f42ee7caea760fd76" name="005-popen-normal.phpt" role="test" />
+				<file md5sum="e9d8fbc8a1b5ce000ada7816af50f193" name="006-proc_open-failed.phpt" role="test" />
+				<file md5sum="03ea274264e688ef3091921ee72072c7" name="006-proc_open-normal.phpt" role="test" />
+				<file md5sum="b49d8eb6368814bdee2bd2282b976f9e" name="007-pcntl_exec-failed.phpt" role="test" />
+				<file md5sum="5f5ac4b7308c09191c3861d8e3dcd702" name="007-pcntl_exec-normal.phpt" role="test" />
+				<file md5sum="4a27690cfb10078609a2115394b276fe" name="008-redirection.phpt" role="test" />
+				<file md5sum="4b88ff8098d4422456f678056ce422e3" name="009-twice_same_command.phpt" role="test" />
+				<file md5sum="6f2fa164e7ec1b630480d56a0d8d57d8" name="cmdformat.txt" role="doc" />
+				<file md5sum="8bd017260c83516852f3ddf01353b22c" name="data.txt" role="doc" />
 			</dir>
 		</dir> <!-- / -->
 	</contents>
@@ -64,8 +64,6 @@
 		<required>
 			<php>
 				<min>5.1.0</min>
-				<max>7.1.0</max>
-				<exclude>6.0.0</exclude>
 			</php>
 			<pearinstaller>
 				<min>1.4.3</min>
@@ -73,12 +71,14 @@
 		</required>
 	</dependencies>
 	<providesextension>execdir</providesextension>
+	<extsrcrelease />
 	<changelog>
 		<release>
 			<stability><release>stable</release><api>stable</api></stability>
 			<version><release>1.0.4</release><api>1.0.0</api></version>
-			<date>2018-02-10</date>
+			<date>2019-02-06</date>
 			<notes>
+				- fixed #24 support PHP 7.3
 			</notes>
 		</release>
 		<release>
@@ -96,7 +96,7 @@
 			<notes>
 				- fixed #12 Removing support for original system function with '_orig'
 				- fixed #13 closing of fd incorrect when PTS enabled (php bug #69442)
-				- fixed #15 But when using "2>&1" in exec command
+				- fixed #15 But when using "2>&amp;1" in exec command
 				- fixed #16 error "NULL byte detected."
 				- fixed #17 failed run-test 000-jailed_shellcmd.phpt
 			</notes>
