@@ -86,6 +86,10 @@ extension = execdir.so
 extension = execdir
 ; use absolute path
 extension = /path/execdir.so
+
+; if you use with opcache, follow option is set false
+; When used with opcache, the proc_close function does not work properly.
+; opcache.fast_shutdown = 0
 ```
 
 This extension replaces the existing functions, so it is recommended that you last loaded.

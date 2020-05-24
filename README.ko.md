@@ -80,6 +80,10 @@ extension = execdir.so
 extension = execdir
 ; use absolute path
 extension = /path/execdir.so
+
+; if you use with opcache, follow option is set false
+; When used with opcache, the proc_close function does not work properly.
+; opcache.fast_shutdown = 0
 ```
 
 이 모듈은 기존의 system 함수들을 바꿔치기 하는 것이므로, 가장 마지막에 로딩되도록 추가해 줍니다.
