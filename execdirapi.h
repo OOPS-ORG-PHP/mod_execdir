@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | mod_execdir v1                                                       |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1999-2018 JoungKyun.Kim                                |
+  | Copyright (c) JoungKyun.Kim                                          |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.0 of the PHP license,       |
   | that is bundled with this package in the file LICENSE, and is        |
