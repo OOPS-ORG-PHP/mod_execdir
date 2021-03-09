@@ -55,7 +55,7 @@ case "${mode}" in
 		find ./tests ! -name '*.phpt' -a ! -name '*.txt' -a -type f
 		;;
 	pack)
-		cp -af package.xml.template package.xml
+		cp -af package.xml.tmpl package.xml
 		list=$(grep "md5sum" ./package.xml | sed -r 's/.*"@|@".*//g')
 
 		for i in ${list}
