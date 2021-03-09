@@ -14,7 +14,7 @@
 	<date>@curdate@</date>
 	<time>@curtime@</time>
 	<version>
-		<release>1.0.4</release>
+		<release>1.0.5</release>
 		<api>1.0.0</api>
 	</version>
 	<stability>
@@ -23,7 +23,7 @@
 	</stability>
 	<license uri="http://www.php.net/license">PHP</license>
 	<notes>
-		- fixed #24 support PHP 7.3
+		-
 	</notes>
 	<contents>
 		<dir name="/">
@@ -75,8 +75,16 @@
 	<changelog>
 		<release>
 			<stability><release>stable</release><api>stable</api></stability>
-			<version><release>1.0.4</release><api>1.0.0</api></version>
+			<version><release>1.0.5</release><api>1.0.0</api></version>
 			<date>@curdate@</date>
+			<notes>
+				-
+			</notes>
+		</release>
+		<release>
+			<stability><release>stable</release><api>stable</api></stability>
+			<version><release>1.0.4</release><api>1.0.0</api></version>
+			<date>2019-02-06</date>
 			<notes>
 				- fixed #24 support PHP 7.3
 			</notes>
