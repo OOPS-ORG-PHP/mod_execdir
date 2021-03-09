@@ -1,41 +1,88 @@
+#!/bin/bash
 
-if [ "$1" = "package" ]; then
-	curdate=$(date "+%Y-%m-%d")
-	curtime=$(date "+%H:%M:%S")
+source /usr/share/annyung-release/functions.d/bash/functions
 
-	cp -af package.xml.template package.xml
-	perl -pi -e "s/\@curdate\@/${curdate}/g" package.xml
-	perl -pi -e "s/\@curtime\@/${curtime}/g" package.xml
+errmsg () {
+	echo "$*" 1>&2
+}
 
-	list="README.md README.ko.md config.m4 execdirapi.c execdirapi.h php_execdir.c php_execdir.h proc_open.c proc_open5.c proc_open53.c"
+usage () {
+	echo "Usage: $0 [clean|pack|test [php-version]]"
+	exit 1
+}
 
-	for i in ${list}
-	do
-		md5v="$(md5sum ${i} | awk '{print $1}')"
-		perl -pi -e \
-			"s/(<file md5sum=)\"[^\"]*\" (name=\"${i}\" role=)/\1\"${md5v}\" \2/g" \
-			package.xml
-	done
+opts=$(getopt -u -o h -l help -- "$@")
+[ $? != 0 ] && usage
 
-	for i in $(ls tests/*.*)
-	do
-		fname=$(basename $i)
-		md5v="$(md5sum ${i} | awk '{print $1}')"
-		perl -pi -e \
-			"s/(<file md5sum=)\"[^\"]*\" (name=\"${fname}\" role=)/\1\"${md5v}\" \2/g" \
-			package.xml
-	done
+set -- ${opts}
+for i
+do
+	case "$i" in
+		-h|--help)
+			usage
+			shift
+			;;
+		--)
+			shift
+			break
+			;;
+	esac
+done
 
-	pecl package
-	rm -f package.xml
-	exit 0
-fi
+mode="${1}"
 
+case "${mode}" in
+	clean)
+		cat <<-EOL
+			[ -f Makefile ] && make distclean
+			rm -rf autom4te.cache build include modules
+			rm -f .deps Makefile* ac*.m4 compile
+			rm -f config.h* config.nice configure* config.sub config.guess
+			rm -f install-sh ltmain.sh missing mkinstalldirs run-tests.php
 
+			rm -f package.xml
+			find ./tests ! -name '*.phpt' -a ! -name '*.txt' -a -type f
+			----->
+		EOL
 
-[ -f Makefile ] && make distclean
-rm -rf modules/ build/ include/ auto*
-rm -f tests/*.diff tests/*.exp tests/*.log tests/*.out tests/*.php tests/*.sh
-mv config.m4 tests/config.m4
-rm -f .deps Makefile* ac* config.* configure* install-sh ltmain.sh missing mkinstalldirs run-tests.php
-mv tests/config.m4 ./config.m4
+		[ -f Makefile ] && make distclean
+		rm -rf autom4te.cache build include modules
+		rm -f .deps Makefile* ac*.m4 compile
+		rm -f config.h* config.nice configure* config.sub config.guess
+		rm -f install-sh ltmain.sh missing mkinstalldirs run-tests.php
+
+		rm -f package.xml
+		find ./tests ! -name '*.phpt' -a ! -name '*.txt' -a -type f
+		;;
+	pack)
+		cp -af package.xml.template package.xml
+		list=$(grep "md5sum" ./package.xml | sed -r 's/.*"@|@".*//g')
+
+		for i in ${list}
+		do
+			md5s=$(md5sum "$i" | awk '{print $1}')
+			perl -pi -e "s!\@${i}\@!${md5s}!g" ./package.xml
+		done
+
+		curdate=$(date +'%Y-%m-%d')
+		curtime=$(date +'%H:%M:%S')
+
+		perl -pi -e "s!\@curdate\@!${curdate}!g" ./package.xml
+		perl -pi -e "s!\@curtime\@!${curtime}!g" ./package.xml
+
+		pecl package
+		rm -f package.xml
+		;;
+	test)
+		./manage.sh clean
+		echo "phpize${2} ./configure"
+		phpize${2} && ./configure
+		echo "make test PHP_EXECUTABLE=/usr/bin/php${2}"
+		make test PHP_EXECUTABLE=/usr/bin/php${2}
+		;;
+	*)
+		errmsg "Unsupport mode '${1}'"
+		exit 1
+esac
+
+exit 0
