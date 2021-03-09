@@ -177,6 +177,9 @@ PHPAPI char * get_jailed_shell_cmd (char * cmd) {
 	char   * exec_dir;
 	char   * _cmd;
 
+	if ( cmd == NULL )
+		return NULL;
+
 #if PHP_VERSION_ID < 50400
 	if ( EXECDIR_G (exec_dir) )
 		exec_dir = EXECDIR_G (exec_dir);

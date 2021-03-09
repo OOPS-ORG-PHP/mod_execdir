@@ -76,9 +76,9 @@ case "${mode}" in
 	test)
 		./manage.sh clean
 		echo "phpize${2} ./configure"
-		phpize${2} && ./configure
+		phpize${2} && ./configure && make -j8 || exit 0
 		echo "make test PHP_EXECUTABLE=/usr/bin/php${2}"
-		make test PHP_EXECUTABLE=/usr/bin/php${2}
+		make test PHP_EXECUTABLE=/usr/bin/php${2} <<< n
 		;;
 	*)
 		errmsg "Unsupport mode '${1}'"

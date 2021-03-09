@@ -83,7 +83,7 @@ char * get_jailed_shell_cmd (char *);
 
 #include "ext/standard/proc_open.h"
 
-static int le_proc_open;
+static int le_proc_open_re;
 
 #if PHP_VERSION_ID < 50200
 /* {{{ zend_memrchr */
@@ -317,6 +317,9 @@ static int php_make_safe_mode_command(char *cmd, char **safecmd, int is_persiste
 
 	if (!PG(safe_mode)) {
 #ifdef HAVE_EXECDIR
+		if ( cmd == NULL ) {
+			return FAILURE;
+		}
 		*safecmd = get_jailed_shell_cmd (cmd);
 #else
 		*safecmd = pestrdup(cmd, is_persistent);
@@ -363,7 +366,7 @@ static int php_make_safe_mode_command(char *cmd, char **safecmd, int is_persiste
 /* {{{ PHP_MINIT_FUNCTION(proc_open_re) */
 PHP_MINIT_FUNCTION(proc_open_re)
 {
-	le_proc_open = zend_register_list_destructors_ex(proc_open_rsrc_dtor, NULL, "process", module_number);
+	le_proc_open_re = zend_register_list_destructors_ex(proc_open_rsrc_dtor, NULL, "process", module_number);
 	return SUCCESS;
 }
 /* }}} */
@@ -380,7 +383,7 @@ PHP_FUNCTION(proc_terminate_re)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE(proc, struct php_process_handle *, &zproc, -1, "process", le_proc_open);
+	ZEND_FETCH_RESOURCE(proc, struct php_process_handle *, &zproc, -1, "process", le_proc_open_re);
 
 #ifdef PHP_WIN32
 	if (TerminateProcess(proc->childHandle, 255)) {
@@ -409,7 +412,7 @@ PHP_FUNCTION(proc_close_re)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE(proc, struct php_process_handle *, &zproc, -1, "process", le_proc_open);
+	ZEND_FETCH_RESOURCE(proc, struct php_process_handle *, &zproc, -1, "process", le_proc_open_re);
 
 	zend_list_delete(Z_LVAL_P(zproc));
 	RETURN_LONG(FG(pclose_ret));
@@ -435,7 +438,7 @@ PHP_FUNCTION(proc_get_status_re)
 		RETURN_FALSE;
 	}
 
-	ZEND_FETCH_RESOURCE(proc, struct php_process_handle *, &zproc, -1, "process", le_proc_open);
+	ZEND_FETCH_RESOURCE(proc, struct php_process_handle *, &zproc, -1, "process", le_proc_open_re);
 
 	array_init(return_value);
 
@@ -1070,7 +1073,7 @@ PHP_FUNCTION(proc_open_re)
 		}
 	}
 
-	ZEND_REGISTER_RESOURCE(return_value, proc, le_proc_open);
+	ZEND_REGISTER_RESOURCE(return_value, proc, le_proc_open_re);
 	return;
 
 exit_fail:
