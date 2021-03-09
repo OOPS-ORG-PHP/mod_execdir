@@ -21,7 +21,11 @@ $r = @pcntl_exec ("/bin/cat", array ($datafile));
 
 if ( $r === false ) {
 	var_dump ($r);
-	var_dump ($php_errormsg);
+	if ( version_compare (PHP_VERSION, '8.0.0') >= 0 ) {
+		var_dump (error_get_last ()['message']);
+	} else {
+		var_dump ($php_errormsg);
+	}
 }
 
 ?>

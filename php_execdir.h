@@ -86,6 +86,15 @@ PHP_FUNCTION (proc_terminate_re);
 	#define execdir_string_release(x) zend_string_release_ex(x,0)
 #endif
 
+/* for >= PHP8 {{{
+ *
+ * Since PHP 8, TSRMLS_CC, and TSRMLS_C constants have been removed.
+ */
+#if PHP_VERSION_ID >= 80000
+	#define TSRMLS_CC
+	#define TSRMLS_C
+#endif /* }}} */
+
 #endif /* PHP_EXECDIR_H */
 
 /*

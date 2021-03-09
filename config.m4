@@ -1,5 +1,8 @@
 dnl config.m4 for extension execdir
 
+dnl build support C99
+AC_PROG_CC_C99
+
 PHP_ARG_WITH(
 	execdir, for execdir support,
 	[AC_HELP_STRING(
@@ -36,7 +39,7 @@ if test "$PHP_EXECDIR" != "no"; then
 		AC_DEFINE([PHP_EXECDIR_COMPAT], [], [Support original system function with _orig suffix])
 	fi
 
-	sources="php_execdir.c execdirapi.c proc_open.c proc_open7.c proc_open5.c proc_open53.c"
+	sources="php_execdir.c execdirapi.c proc_open.c proc_open74.c proc_open7.c proc_open5.c proc_open53.c"
 
 	PHP_NEW_EXTENSION(execdir, $sources, $ext_shared,, \\$(CFALGS))
 fi

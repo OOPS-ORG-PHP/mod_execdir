@@ -65,65 +65,16 @@ char * execdir_list[] = {
 
 /* {{{ execdir_functions[]
  */
-
-/* {{{ php_exec.c */
-ZEND_BEGIN_ARG_INFO_EX (arginfo_exec_re, 0, 0, 1)
-    ZEND_ARG_INFO(0, command)
-    ZEND_ARG_INFO(1, output) /* ARRAY_INFO(1, output, 1) */
-    ZEND_ARG_INFO(1, return_value)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX (arginfo_system_re, 0, 0, 1)
-    ZEND_ARG_INFO(0, command)
-    ZEND_ARG_INFO(1, return_value)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX (arginfo_passthru_re, 0, 0, 1)
-    ZEND_ARG_INFO(0, command)
-    ZEND_ARG_INFO(1, return_value)
-ZEND_END_ARG_INFO()
-/* }}} */
-
-/* {{{ proc_open.c */
-#ifdef PHP_CAN_SUPPORT_PROC_OPEN
-ZEND_BEGIN_ARG_INFO_EX(arginfo_proc_terminate, 0, 0, 1)
-	ZEND_ARG_INFO(0, process)
-	ZEND_ARG_INFO(0, signal)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_proc_close, 0)
-	ZEND_ARG_INFO(0, process)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO(arginfo_proc_get_status, 0)
-	ZEND_ARG_INFO(0, process)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_proc_open, 0, 0, 3)
-	ZEND_ARG_INFO(0, command)
-	ZEND_ARG_INFO(0, descriptorspec) /* ARRAY_INFO(0, descriptorspec, 1) */
-	ZEND_ARG_INFO(1, pipes) /* ARRAY_INFO(1, pipes, 1) */
-	ZEND_ARG_INFO(0, cwd)
-	ZEND_ARG_INFO(0, env) /* ARRAY_INFO(0, env, 1) */
-	ZEND_ARG_INFO(0, other_options) /* ARRAY_INFO(0, other_options, 1) */
-ZEND_END_ARG_INFO()
-#endif
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_pcntl_exec, 0, 0, 1)
-    ZEND_ARG_INFO(0, path)
-    ZEND_ARG_INFO(0, args)
-    ZEND_ARG_INFO(0, envs)
-ZEND_END_ARG_INFO()
-/* }}} */
+#include "execdir_arginfo.h"
 
 const zend_function_entry execdir_functions[] = {
 	PHP_FE (exec_re,            arginfo_exec_re)
 	PHP_FE (system_re,          arginfo_system_re)
 	PHP_FE (passthru_re,        arginfo_passthru_re)
-	PHP_FE (shell_exec_re,      NULL)
-	PHP_FE (popen_re,           NULL)
-	PHP_FE (pcntl_exec_re,      arginfo_pcntl_exec)
-	PHP_FE (jailed_shellcmd,    NULL)
+	PHP_FE (shell_exec_re,      arginfo_shell_exec_re)
+	PHP_FE (popen_re,           arginfo_popen_re)
+	PHP_FE (pcntl_exec_re,      arginfo_pcntl_exec_re)
+	PHP_FE (jailed_shellcmd,    arginfo_jailed_shellcmd_re)
 
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
 	PHP_FE (proc_open_re,       arginfo_proc_open)
@@ -141,9 +92,9 @@ const zend_function_entry execdir_hook_functions[] = {
 	PHP_FALIAS (exec,            exec_re,            arginfo_exec_re)
 	PHP_FALIAS (system,          system_re,          arginfo_system_re)
 	PHP_FALIAS (passthru,        passthru_re,        arginfo_passthru_re)
-	PHP_FALIAS (shell_exec,      shell_exec_re,      NULL)
-	PHP_FALIAS (popen,           popen_re,           NULL)
-	PHP_FALIAS (pcntl_exec,      pcntl_exec_re,      arginfo_pcntl_exec)
+	PHP_FALIAS (shell_exec,      shell_exec_re,      arginfo_shell_exec_re)
+	PHP_FALIAS (popen,           popen_re,           arginfo_popen_re)
+	PHP_FALIAS (pcntl_exec,      pcntl_exec_re,      arginfo_pcntl_exec_re)
 
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
 	PHP_FALIAS (proc_open,       proc_open_re,       arginfo_proc_open)
@@ -202,7 +153,9 @@ static int safe_hook_execdir (void) {
 	int    entno = sizeof (execdir_list) / sizeof (char *);
 	int    i, funclen;
 	char * func;
+#if PHP_VERSION_ID < 80000
 	TSRMLS_FETCH ();
+#endif
 
 	for ( i=0; i<entno; i++ ) {
 		func = execdir_list[i];
@@ -645,11 +598,18 @@ PHP_FUNCTION (pcntl_exec_re)
 	}
 
 	if ( zend_parse_parameters (ZEND_NUM_ARGS (), "p|aa", &path, &path_len, &args, &envs) == FAILURE ) {
+#if PHP_VERSION_ID >= 80000
+		RETURN_THROWS ();
+#else
 		return;
+#endif
 	}
 
 	if ( ZEND_NUM_ARGS () > 1 ) {
 		/* Build argument list */
+#if PHP_VERSION_ID >= 80000
+		SEPARATE_ARRAY(args);
+#endif
 		args_hash = Z_ARRVAL_P (args);
 		argc = zend_hash_num_elements (args_hash);
 
@@ -658,7 +618,15 @@ PHP_FUNCTION (pcntl_exec_re)
 		current_arg = argv + 1;
 		ZEND_HASH_FOREACH_VAL (args_hash, element) {
 			if ( argi >= argc ) break;
+#if PHP_VERSION_ID >= 80000
+			if ( ! try_convert_to_string (element) ) {
+				efree (argv);
+				RETURN_THROWS ();
+			}
+
+#else
 			convert_to_string_ex (element);
+#endif
 			*current_arg = Z_STRVAL_P (element);
 			argi++;
 			current_arg++;
@@ -666,8 +634,13 @@ PHP_FUNCTION (pcntl_exec_re)
 		*(current_arg) = NULL;
 	} else {
 		argv = emalloc (2 * sizeof (char *));
+#if PHP_VERSION_ID >= 80000
+		argv[0] = path;
+		argv[1] = NULL;
+#else
 		*argv = path;
 		*(argv + 1) = NULL;
+#endif
 	}
 
 	jpath = get_jailed_shell_cmd(path);
@@ -686,7 +659,16 @@ PHP_FUNCTION (pcntl_exec_re)
 				zend_string_addref (key);
 			}
 
+#if PHP_VERSION_ID >= 80000
+			if ( ! try_convert_to_string (element) ) {
+				zend_string_release (key);
+				efree (argv);
+				efree (envp);
+				RETURN_THROWS ();
+			}
+#else
 			convert_to_string_ex (element);
+#endif
 
 			/* Length of element + equal sign + length of key + null */
 			pair_length = Z_STRLEN_P (element) + ZSTR_LEN (key) + 2;
@@ -696,7 +678,11 @@ PHP_FUNCTION (pcntl_exec_re)
 			strlcat (*pair, Z_STRVAL_P (element), pair_length);
 
 			/* Cleanup */
+#if PHP_VERSION_ID >= 80000
+			zend_string_release_ex (key, 0);
+#else
 			execdir_string_release (key);
+#endif
 			envi++;
 			pair++;
 		} ZEND_HASH_FOREACH_END ();
