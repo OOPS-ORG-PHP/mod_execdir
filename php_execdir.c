@@ -47,19 +47,20 @@ ZEND_DECLARE_MODULE_GLOBALS (execdir)
  *
  * system function list to apply exec_dir
  */
-char * execdir_list[] = {
-	"exec",
-	"system",
-	"passthru",
-	"pcntl_exec",
-	"shell_exec",
-	"popen",
+static const struct execdir_overload_func execdir_list[] = {
+	{ "exec",            "exec_re",            "exec_orig"            },
+	{ "system",          "system_re",          "system_orig"          },
+	{ "passthru",        "passthru_re",        "passthru_orig"        },
+	{ "pcntl_exec",      "pcntl_exec_re",      "pcntl_exec_orig"      },
+	{ "shell_exec",      "shell_exec_re",      "shell_exec_orig"      },
+	{ "popen",           "popen_re",           "popen_orig"           },
 #ifdef PHP_CAN_SUPPORT_PROC_OPEN
-	"proc_open",
-	"proc_close",
-	"proc_terminate",
-	"proc_get_status",
+	{ "proc_open",       "proc_open_re",       "proc_open_orig"       },
+	{ "proc_close",      "proc_close_re",      "proc_close_orig"      },
+	{ "proc_terminate",  "proc_terminate_re",  "proc_terminate_orig"  },
+	{ "proc_get_status", "proc_get_status_re", "proc_get_status_orig" },
 #endif
+	{ NULL, NULL, NULL }
 };
 /* }}} */
 
@@ -82,10 +83,29 @@ const zend_function_entry execdir_functions[] = {
 	PHP_FE (proc_terminate_re,  arginfo_proc_terminate)
 	PHP_FE (proc_get_status_re, arginfo_proc_get_status)
 #endif
+
+#if PHP_VERSION_ID >= 60000
+#ifdef PHP_EXECDIR_COMPAT
+	PHP_FE (exec_orig,           arginfo_exec_re)
+	PHP_FE (system_orig,         arginfo_system_re)
+	PHP_FE (passthru_orig,       arginfo_passthru_re)
+	PHP_FE (shell_exec_orig,     arginfo_shell_exec_re)
+	PHP_FE (popen_orig,          arginfo_popen_re)
+	PHP_FE (pcntl_exec_orig,     arginfo_pcntl_exec_re)
+
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
+	PHP_FE (proc_open_orig,       arginfo_proc_open)
+	PHP_FE (proc_close_orig,      arginfo_proc_close)
+	PHP_FE (proc_terminate_orig,  arginfo_proc_terminate)
+	PHP_FE (proc_get_status_orig, arginfo_proc_get_status)
+#endif
+#endif
+#endif
 	{NULL, NULL, NULL}
 };
 /* }}} */
 
+#if PHP_VERSION_ID < 60000
 /* {{{ execdir_hook_functions[]
  */
 const zend_function_entry execdir_hook_functions[] = {
@@ -105,6 +125,7 @@ const zend_function_entry execdir_hook_functions[] = {
 	{NULL, NULL, NULL}
 };
 /* }}} */
+#endif
 
 /* {{{ execdir_module_entry
  */
@@ -150,58 +171,56 @@ void php_execdir_init_globals (zend_execdir_globals * execdir_globals) {
 /*{{{ +-- static int safe_hook_execdir (void)
  */
 static int safe_hook_execdir (void) {
-	int    entno = sizeof (execdir_list) / sizeof (char *);
-	int    i, funclen;
-	char * func;
+	const struct execdir_overload_func *p;
+#if PHP_VERSION_ID >= 60000
+	zend_function * func, * nfunc;
+#ifdef PHP_EXECDIR_COMPAT
+	zend_function * ofunc;
+#endif
+#endif
+
 #if PHP_VERSION_ID < 80000
 	TSRMLS_FETCH ();
 #endif
 
-	for ( i=0; i<entno; i++ ) {
-		func = execdir_list[i];
-		funclen = strlen (func);
-
-		if ( ! execdir_hash_exists (CG (function_table), func) )
+	p = &(execdir_list[0]);
+	while ( p->orig_func != NULL ) {
+		if ( ! execdir_hash_exists (CG (function_table), p->orig_func) ) {
+			p++;
 			continue;
+		}
 
-#ifndef PHP_EXECDIR_COMPAT
+#if PHP_VERSION_ID < 60000
+  #ifdef PHP_EXECDIR_COMPAT
+		/*
+		 * Rename original function gets postfile '_orig'
+		 */
+		zend_hash_find (CG (function_table), EXEC_STRING (p->orig_func) + 1, (void **) &func);
+		zend_hash_add  (CG (function_table), EXEC_STRING (p->ovld_func) + 1, func, sizeof (zend_function), NULL);
+  #endif
 		/*
 		 * Remove original function
 		 */
-	#if PHP_VERSION_ID < 60000
-		zend_hash_del (CG (function_table), func, funclen + 1);
-	#else
-		zend_hash_str_del (CG (function_table), func, funclen);
-	#endif
+		zend_hash_del (CG (function_table), EXEC_STRING (p->orig_func)  + 1);
 #else
-		/*
-		 * Rename original function gets postfie '_orig'
-		 */
-		{
-			char            func_re[32] = { 0 };
-			int             func_relen;
-			zend_function * zf;
-
-			sprintf (func_re, "%s_orig", func);
-			func_relen = funclen + 5;
-
-			if ( execdir_hash_exists (CG (function_table), func_re) )
-				continue;
-
-	#if PHP_VERSION_ID < 60000
-			zend_hash_find (CG (function_table), func, funclen + 1, (void **) &zf);
-			zend_hash_add (CG (function_table), func_re, func_relen + 1, zf, sizeof (zend_function), NULL);
-			zend_hash_del (CG (function_table), func, funclen + 1);
-	#else
-			zf = zend_hash_str_find_ptr (CG (function_table), func, funclen);
-			zend_hash_str_add_mem (CG (function_table), func_re, func_relen, zf, sizeof (zend_function));
-			zend_hash_str_del (CG (function_table), func, funclen);
-	#endif
+		if ( (func = zend_hash_str_find_ptr (CG (function_table), EXEC_STRING (p->orig_func))) != NULL ) {
+			nfunc = zend_hash_str_find_ptr (CG (function_table), EXEC_STRING (p->ovld_func));
+  #ifdef PHP_EXECDIR_COMPAT
+			ofunc = zend_hash_str_find_ptr (CG (function_table), EXEC_STRING (p->save_func));
+			if ( ofunc->internal_function.handler != func->internal_function.handler )
+				ofunc->internal_function.handler = func->internal_function.handler;
+  #endif
+			if ( func->internal_function.handler != nfunc->internal_function.handler )
+				func->internal_function.handler = nfunc->internal_function.handler;
 		}
-#endif
+#endif /* end of PHP_VERSION_ID < 60000 */
+		p++;
 	}
 
+
+#if PHP_VERSION_ID < 60000
 	zend_register_functions (NULL, execdir_hook_functions, NULL, MODULE_PERSISTENT TSRMLS_CC);
+#endif
 	return 0;
 }
 /* }}} */
@@ -678,11 +697,7 @@ PHP_FUNCTION (pcntl_exec_re)
 			strlcat (*pair, Z_STRVAL_P (element), pair_length);
 
 			/* Cleanup */
-#if PHP_VERSION_ID >= 80000
-			zend_string_release_ex (key, 0);
-#else
 			execdir_string_release (key);
-#endif
 			envi++;
 			pair++;
 		} ZEND_HASH_FOREACH_END ();
@@ -858,6 +873,28 @@ PHP_FUNCTION (jailed_shellcmd)
 
 	efree (jcmd);
 }
+/* }}} */
+
+/* PHP_EXECDIR_COMPAT functions (*_orig)
+ * This functions are only used PHP 7.4 and after
+ */
+#if PHP_VERSION_ID >= 60000
+#ifdef PHP_EXECDIR_COMPAT
+PHP_FUNCTION (exec_orig) { RETURN_NULL (); }
+PHP_FUNCTION (system_orig) { RETURN_NULL (); }
+PHP_FUNCTION (passthru_orig) { RETURN_NULL (); }
+PHP_FUNCTION (shell_exec_orig) { RETURN_NULL (); }
+PHP_FUNCTION (popen_orig) { RETURN_NULL (); }
+PHP_FUNCTION (pcntl_exec_orig) { RETURN_NULL (); }
+
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
+PHP_FUNCTION (proc_open_orig) { RETURN_NULL (); }
+PHP_FUNCTION (proc_get_status_orig) { RETURN_NULL (); }
+PHP_FUNCTION (proc_close_orig) { RETURN_NULL (); }
+PHP_FUNCTION (proc_terminate_orig) { RETURN_NULL (); }
+#endif
+#endif
+#endif
 /* }}} */
 
 /*

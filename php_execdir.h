@@ -42,6 +42,12 @@ extern zend_module_entry execdir_module_entry;
 	#define EXECDIR_G(v) (execdir_globals.v)
 #endif
 
+struct execdir_overload_func {
+	char *orig_func;
+	char *ovld_func;
+	char *save_func;
+};
+
 ZEND_BEGIN_MODULE_GLOBALS(execdir)
 	char * exec_dir;
 ZEND_END_MODULE_GLOBALS(execdir)
@@ -67,6 +73,25 @@ PHP_FUNCTION (proc_get_status_re);
 PHP_FUNCTION (proc_close_re);
 PHP_FUNCTION (proc_terminate_re);
 #endif
+
+#if PHP_VERSION_ID >= 60000
+#ifdef PHP_EXECDIR_COMPAT
+PHP_FUNCTION (exec_orig);
+PHP_FUNCTION (system_orig);
+PHP_FUNCTION (passthru_orig);
+PHP_FUNCTION (shell_exec_orig);
+PHP_FUNCTION (popen_orig);
+PHP_FUNCTION (pcntl_exec_orig);
+#ifdef PHP_CAN_SUPPORT_PROC_OPEN
+PHP_FUNCTION (proc_open_orig);
+PHP_FUNCTION (proc_get_status_orig);
+PHP_FUNCTION (proc_close_orig);
+PHP_FUNCTION (proc_terminate_orig);
+#endif
+#endif
+#endif
+
+#define EXEC_STRING(s) s, strlen(s)
 
 #if PHP_VERSION_ID < 60000
 	#define RETURN_EXECDIR_STRING(s,i) RETURN_STRING(s,i)
