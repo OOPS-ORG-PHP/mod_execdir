@@ -8,7 +8,7 @@ PHP execdir extension
 
 ## 1. License
 
-Copyright (c) 2018 JoungKyun.Kim &lt;http://oops.org&gt; All rights reserved.
+Copyright (c) 2021 JoungKyun.Kim &lt;http://oops.org&gt; All rights reserved.
 
 This program is under ***PHP License***.
 
@@ -22,7 +22,7 @@ This feature is an implementation to improve ***safe_mode_exec_dir*** before PHP
 
 The execdir exntesion is to complement the such disadvantages of ***safe_mode_exec_dir***, and support non ***SAFE MODE*** and over PHP 5.4.
 
-This featurhe was made for <u>highlight syntax security hole of PHPBB</u> in May 2005. Also, it has been applied to large business site and AnNyung LInux distribution and verified more than 10 years.
+This feature was made for <u>highlight syntax security hole of PHPBB</u> in May 2005. Also, it has been applied to large business site and AnNyung LInux distribution and verified more than 10 years.
 
 This feature is provided as the source patch or php dynamic extension, and affects follow PHP functions:
 
@@ -40,7 +40,7 @@ This feature is provided as the source patch or php dynamic extension, and affec
 
 ### 3.1. Requirement
 
-Over PHP 5 and PHP 7. But, it is tested on PHP 5.1 and after.
+Over PHP 5, PHP 7 and PHP 8. But, it is tested on PHP 5.1 and after.
 
 For this features, we support 2 building method.
 

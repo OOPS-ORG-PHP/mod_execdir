@@ -4,13 +4,13 @@ PHP execdir extension
 
 ## 1. License
 
-Copyright (c) 2018 JoungKyun.Kim &lt;http://oops.org&gt; All rights reserved.
+Copyright (c) 2021 JoungKyun.Kim &lt;http://oops.org&gt; All rights reserved.
 
 This program is under PHP License.
 
 ## 2. Description
 
-***mod_execdir*** 확장은 특정 디렉토리에 있는 명령만 실행할 수 있도록 제한을 하여, web shell이나 system shell injection 공격을 <u>원천적으로 방어</u>할 수 있습니다.
+***mod_execdir*** 확장은 특정 디렉토리에 있는 명령만 실행할 수 있도록 제한을 하여, web shell이나 system shell injection 공격을 <u>원천적으로 방어</u>할 수 있습니다. open_basedir과 같이 사용을 하면 hosting 서버에서의 각 계정간의 침해도 완벽하게 방어할 수 있습니다.
 
 이 기능은 PHP 5.4 이전의 ***safe_mode_exec_dir*** 기능을 향상 구현한 것입니다.
 
@@ -36,7 +36,7 @@ execdir 기능은 이런 ***safe_mode_exec_dir*** 기능의 단점을 보완하�
 
 ### 3.1. Requirement
 
-PHP 5 와 PHP 7 이상에서 사용이 가능합니다.
+PHP 5 와 PHP 7, PHP 8 이상에서 사용이 가능합니다.
 
 PHP 확장 모듈의 경우, PHP 5 호환 코드로 작성 하였지만, 실제 테스트는 PHP 5.1 이후 버전에서만 테스트 되었습니다.
 
