@@ -195,13 +195,16 @@ static int safe_hook_execdir (void) {
 		/*
 		 * Rename original function gets postfile '_orig'
 		 */
-		zend_hash_find (CG (function_table), EXEC_STRING (p->orig_func) + 1, (void **) &func);
-		zend_hash_add  (CG (function_table), EXEC_STRING (p->ovld_func) + 1, func, sizeof (zend_function), NULL);
+		zend_hash_find (CG (function_table), p->orig_func, strlen(p->prog_func) + 1, (void **) &func);
+		zend_hash_add  (
+			CG (function_table), p->ovld_func, strlen(p->prog_func) + 1,
+			func, sizeof (zend_function), NULL
+		);
   #endif
 		/*
 		 * Remove original function
 		 */
-		zend_hash_del (CG (function_table), EXEC_STRING (p->orig_func)  + 1);
+		zend_hash_del (CG (function_table), p->orig_func, strlen(p->orig_func)  + 1);
 #else
 		if ( (func = zend_hash_str_find_ptr (CG (function_table), EXEC_STRING (p->orig_func))) != NULL ) {
 			nfunc = zend_hash_str_find_ptr (CG (function_table), EXEC_STRING (p->ovld_func));
