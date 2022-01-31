@@ -93,6 +93,20 @@ PHP_FUNCTION (proc_terminate_orig);
 
 #define EXEC_STRING(s) s, strlen(s)
 
+#if PHP_VERSION_ID < 50500
+#if ZEND_DEBUG
+#define ZEND_ASSERT(c) assert(c)
+#else
+#define ZEND_ASSERT(c)
+#endif
+#endif
+
+#if PHP_VERSION_ID < 50600
+#if ! defined(SIZE_MAX)
+#include <stdint.h>
+#endif
+#endif
+
 #if PHP_VERSION_ID < 60000
 	#define RETURN_EXECDIR_STRING(s,i) RETURN_STRING(s,i)
 	#define RETVAL_EXECDIR_STRING(s,i) RETVAL_STRINGL(s,i,1)
