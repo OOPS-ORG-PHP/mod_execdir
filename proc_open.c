@@ -387,7 +387,11 @@ PHP_FUNCTION(proc_get_status_re)
 	}
 
 	array_init(return_value);
+#if PHP_VERSION_ID < 80100
 	add_assoc_string(return_value, "command", proc->command);
+#else
+	add_assoc_string(return_value, "command", ZSTR_VAL (proc->command));
+#endif
 	add_assoc_long(return_value, "pid", (zend_long)proc->child);
 
 #ifdef PHP_WIN32
@@ -1279,7 +1283,11 @@ PHP_FUNCTION(proc_open_re)
 	}
 
 	proc = (php_process_handle*) emalloc(sizeof(php_process_handle));
+#if PHP_VERSION_ID < 80100
 	proc->command = command;
+#else
+	proc->command = zend_string_init (command, strlen (command), 0);
+#endif
 	proc->pipes = emalloc(sizeof(zend_resource *) * ndesc);
 	proc->npipes = ndesc;
 	proc->child = child;
