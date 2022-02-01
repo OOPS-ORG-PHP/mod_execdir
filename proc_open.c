@@ -649,10 +649,6 @@ static char* get_command_from_array(HashTable *array, char ***argv, int num_elem
 
 		if (i == 0) {
 #ifdef HAVE_EXECDIR
-			if (strlen(ZSTR_VAL(arg_str)) != ZSTR_LEN(arg_str)) {
-				php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
-				return NULL;
-			}
 			{
 				char * jcommand = get_jailed_shell_cmd (ZSTR_VAL(arg_str));
 				if (jcommand == NULL)

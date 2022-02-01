@@ -567,10 +567,6 @@ PHP_FUNCTION(proc_open_re)
 
 			if (i == 0) {
 #ifdef HAVE_EXECDIR
-				if (strlen(ZSTR_VAL(arg_str)) != ZSTR_LEN(arg_str)) {
-					php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
-					RETURN_FALSE;
-				}
 				{
 					char * jcommand = get_jailed_shell_cmd (ZSTR_VAL(arg_str));
 					if ( jcommand == NULL ) {
