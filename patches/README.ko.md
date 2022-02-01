@@ -40,6 +40,8 @@
 [root@host ~]$ cd php-7.0.7
 [root@host php-7.0.7]$ wget https://raw.githubusercontent.com/OOPS-ORG-PHP/mod_execdir/master/patches/php-7.0.7-execdir.patch
 [root@host php-7.0.7]$ patch -p1 < ./php-7.0.7-execdir.patch
+# configure 파일을 재생성
+[root@host php-7.0.7]$ ./buildconf --force
 ```
 
 패치를 적용한 후에, ***configure*** 시에 ***--with-exec-dir*** 옵션으로 jail을 할 기본 디렉토리를 지정 합니다.

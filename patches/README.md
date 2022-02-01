@@ -33,6 +33,8 @@ First, download patch file that matches PHP version from [mod_execdir/patches](h
 [root@host ~]$ cd php-7.0.7
 [root@host php-7.0.7]$ wget https://raw.githubusercontent.com/OOPS-ORG-PHP/mod_execdir/master/patches/php-7.0.7-execdir.patch
 [root@host php-7.0.7]$ patch -p1 < ./php-7.0.7-execdir.patch
+# re-generate configure file
+[root@host php-7.0.7]$ ./buildconf --force
 ```
 
 And execute configure with --with-exec-dir option for jailed system commands.
