@@ -5,14 +5,14 @@
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
    | available through the world-wide-web at the following url:           |
-   | https://www.php.net/license/3_01.txt                                 |
+   | http://www.php.net/license/3_01.txt                                  |
    | If you did not receive a copy of the PHP license and are unable to   |
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
    | Author: Wez Furlong <wez@thebrainroom.com>                           |
    | Jailed: JoungKyun.Kim <http://oops.org>                              |
-   |         This source is based on PHP-8.1.1 branch                     |
+   |         This source is based on PHP-8.0.3 branch                     |
    +----------------------------------------------------------------------+
  */
 
@@ -22,7 +22,7 @@
 
 #include "php.h"
 
-#if PHP_VERSION_ID >= 80100
+#if PHP_VERSION_ID >= 80000 && PHP_VERSION_ID < 80100
 
 #include <stdio.h>
 #include <ctype.h>
@@ -35,7 +35,7 @@
 #include "php_globals.h"
 #include "SAPI.h"
 #include "main/php_network.h"
-#include "zend_smart_str.h"
+#include "zend_smart_string.h"
 
 #if HAVE_SYS_WAIT_H
 #include <sys/wait.h>
@@ -301,7 +301,7 @@ static void proc_open_rsrc_dtor(zend_resource *rsrc)
 
 	_php_free_envp(proc->env);
 	efree(proc->pipes);
-	zend_string_release_ex(proc->command, false);
+	efree(proc->command);
 	efree(proc);
 }
 /* }}} */
@@ -374,7 +374,7 @@ PHP_FUNCTION(proc_get_status_re)
 	int wstatus;
 	pid_t wait_pid;
 #endif
-	bool running = 1, signaled = 0, stopped = 0;
+	int running = 1, signaled = 0, stopped = 0;
 	int exitcode = -1, termsig = 0, stopsig = 0;
 
 	ZEND_PARSE_PARAMETERS_START(1, 1)
@@ -387,7 +387,7 @@ PHP_FUNCTION(proc_get_status_re)
 	}
 
 	array_init(return_value);
-	add_assoc_str(return_value, "command", zend_string_copy(proc->command));
+	add_assoc_string(return_value, "command", proc->command);
 	add_assoc_long(return_value, "pid", (zend_long)proc->child);
 
 #ifdef PHP_WIN32
@@ -498,71 +498,70 @@ static zend_string *get_valid_arg_string(zval *zv, int elem_num) {
 }
 
 #ifdef PHP_WIN32
-static void append_backslashes(smart_str *str, size_t num_bs)
+static void append_backslashes(smart_string *str, size_t num_bs)
 {
 	for (size_t i = 0; i < num_bs; i++) {
-		smart_str_appendc(str, '\\');
+		smart_string_appendc(str, '\\');
 	}
 }
 
 /* See https://docs.microsoft.com/en-us/cpp/cpp/parsing-cpp-command-line-arguments */
-static void append_win_escaped_arg(smart_str *str, zend_string *arg)
+static void append_win_escaped_arg(smart_string *str, char *arg)
 {
+	char c;
 	size_t num_bs = 0;
-
-	smart_str_appendc(str, '"');
-	for (size_t i = 0; i < ZSTR_LEN(arg); ++i) {
-		char c = ZSTR_VAL(arg)[i];
+	smart_string_appendc(str, '"');
+	while ((c = *arg)) {
 		if (c == '\\') {
 			num_bs++;
-			continue;
+		} else {
+			if (c == '"') {
+				/* Backslashes before " need to be doubled. */
+				num_bs = num_bs * 2 + 1;
+			}
+			append_backslashes(str, num_bs);
+			smart_string_appendc(str, c);
+			num_bs = 0;
 		}
-
-		if (c == '"') {
-			/* Backslashes before " need to be doubled. */
-			num_bs = num_bs * 2 + 1;
-		}
-		append_backslashes(str, num_bs);
-		smart_str_appendc(str, c);
-		num_bs = 0;
+		arg++;
 	}
 	append_backslashes(str, num_bs * 2);
-	smart_str_appendc(str, '"');
+	smart_string_appendc(str, '"');
 }
 
-static zend_string *create_win_command_from_args(HashTable *args)
+static char *create_win_command_from_args(HashTable *args)
 {
-	smart_str str = {0};
+	smart_string str = {0};
 	zval *arg_zv;
-	bool is_prog_name = 1;
+	zend_bool is_prog_name = 1;
 	int elem_num = 0;
 
 	ZEND_HASH_FOREACH_VAL(args, arg_zv) {
 		zend_string *arg_str = get_valid_arg_string(arg_zv, ++elem_num);
 		if (!arg_str) {
-			smart_str_free(&str);
+			smart_string_free(&str);
 			return NULL;
 		}
 
 		if (!is_prog_name) {
-			smart_str_appendc(&str, ' ');
+			smart_string_appendc(&str, ' ');
 		}
 
-		append_win_escaped_arg(&str, arg_str);
+		append_win_escaped_arg(&str, ZSTR_VAL(arg_str));
 
 		is_prog_name = 0;
 		zend_string_release(arg_str);
 	} ZEND_HASH_FOREACH_END();
-	smart_str_0(&str);
-	return str.s;
+	smart_string_0(&str);
+	return str.c;
 }
 
 /* Get a boolean option from the `other_options` array which can be passed to `proc_open`.
  * (Currently, all options apply on Windows only.) */
-static bool get_option(zval *other_options, char *opt_name, size_t opt_name_len)
+static int get_option(zval *other_options, char *opt_name)
 {
 	HashTable *opt_ary = Z_ARRVAL_P(other_options);
-	zval *item = zend_hash_str_find_deref(opt_ary, opt_name, opt_name_len);
+	zval *item = zend_hash_str_find_deref(opt_ary, opt_name, strlen(opt_name));
 	return item != NULL &&
 		(Z_TYPE_P(item) == IS_TRUE ||
 		((Z_TYPE_P(item) == IS_LONG) && Z_LVAL_P(item)));
@@ -601,7 +600,7 @@ static void init_process_info(PROCESS_INFORMATION *pi)
 	memset(&pi, 0, sizeof(pi));
 }
 
-static zend_result convert_command_to_use_shell(wchar_t **cmdw, size_t cmdw_len)
+static int convert_command_to_use_shell(wchar_t **cmdw, size_t cmdw_len)
 {
 	size_t len = sizeof(COMSPEC_NT) + sizeof(" /s /c ") + cmdw_len + 3;
 	wchar_t *cmdw_shell = (wchar_t *)malloc(len * sizeof(wchar_t));
@@ -625,10 +624,10 @@ static zend_result convert_command_to_use_shell(wchar_t **cmdw, size_t cmdw_len)
 #endif
 
 /* Convert command parameter array passed as first argument to `proc_open` into command string */
-static zend_string* get_command_from_array(HashTable *array, char ***argv, int num_elems)
+static char* get_command_from_array(HashTable *array, char ***argv, int num_elems)
 {
 	zval *arg_zv;
-	zend_string *command = NULL;
+	char *command = NULL;
 	int i = 0;
 
 	*argv = safe_emalloc(sizeof(char *), num_elems + 1, 0);
@@ -639,7 +638,7 @@ static zend_string* get_command_from_array(HashTable *array, char ***argv, int n
 			/* Terminate with NULL so exit_fail code knows how many entries to free */
 			(*argv)[i] = NULL;
 			if (command != NULL) {
-				zend_string_release_ex(command, false);
+				efree(command);
 			}
 			return NULL;
 		}
@@ -650,14 +649,12 @@ static zend_string* get_command_from_array(HashTable *array, char ***argv, int n
 				char * jcommand = get_jailed_shell_cmd (ZSTR_VAL(arg_str));
 				if (jcommand == NULL)
 					return NULL;
-				zend_string_release (arg_str);
-				arg_str = NULL;
-
-				arg_str = zend_string_init (jcommand, strlen (jcommand), 0);
+				command = estrdup(jcommand);
 				efree (jcommand);
 			}
+#else
+			command = estrdup(ZSTR_VAL(arg_str));
 #endif
-			command = zend_string_copy(arg_str);
 		}
 
 		(*argv)[i++] = estrdup(ZSTR_VAL(arg_str));
@@ -668,9 +665,9 @@ static zend_string* get_command_from_array(HashTable *array, char ***argv, int n
 	return command;
 }
 
-static descriptorspec_item* alloc_descriptor_array(HashTable *descriptorspec)
+static descriptorspec_item* alloc_descriptor_array(zval *descriptorspec)
 {
-	uint32_t ndescriptors = zend_hash_num_elements(descriptorspec);
+	int ndescriptors = zend_hash_num_elements(Z_ARRVAL_P(descriptorspec));
 	return ecalloc(sizeof(descriptorspec_item), ndescriptors);
 }
 
@@ -684,7 +681,7 @@ static zend_string* get_string_parameter(zval *array, int index, char *param_nam
 	return zval_try_get_string(array_item);
 }
 
-static zend_result set_proc_descriptor_to_blackhole(descriptorspec_item *desc)
+static int set_proc_descriptor_to_blackhole(descriptorspec_item *desc)
 {
 #ifdef PHP_WIN32
 	desc->childend = CreateFileA("nul", GENERIC_READ | GENERIC_WRITE,
@@ -703,7 +700,7 @@ static zend_result set_proc_descriptor_to_blackhole(descriptorspec_item *desc)
 	return SUCCESS;
 }
 
-static zend_result set_proc_descriptor_to_pty(descriptorspec_item *desc, int *master_fd, int *slave_fd)
+static int set_proc_descriptor_to_pty(descriptorspec_item *desc, int *master_fd, int *slave_fd)
 {
 #if HAVE_OPENPTY
 	/* All FDs set to PTY in the child process will go to the slave end of the same PTY.
@@ -742,7 +739,7 @@ static php_file_descriptor_t make_descriptor_cloexec(php_file_descriptor_t fd)
 #endif
 }
 
-static zend_result set_proc_descriptor_to_pipe(descriptorspec_item *desc, zend_string *zmode)
+static int set_proc_descriptor_to_pipe(descriptorspec_item *desc, zend_string *zmode)
 {
 	php_file_descriptor_t newpipe[2];
 
@@ -779,7 +776,7 @@ static zend_result set_proc_descriptor_to_pipe(descriptorspec_item *desc, zend_s
 #define create_socketpair(socks) socketpair(AF_UNIX, SOCK_STREAM, 0, (socks))
 #endif
 
-static zend_result set_proc_descriptor_to_socket(descriptorspec_item *desc)
+static int set_proc_descriptor_to_socket(descriptorspec_item *desc)
 {
 	php_socket_t sock[2];
 
@@ -799,7 +796,7 @@ static zend_result set_proc_descriptor_to_socket(descriptorspec_item *desc)
 	return SUCCESS;
 }
 
-static zend_result set_proc_descriptor_to_file(descriptorspec_item *desc, zend_string *file_path,
+static int set_proc_descriptor_to_file(descriptorspec_item *desc, zend_string *file_path,
 	zend_string *file_mode)
 {
 	php_socket_t fd;
@@ -832,7 +829,7 @@ static zend_result set_proc_descriptor_to_file(descriptorspec_item *desc, zend_s
 	return SUCCESS;
 }
 
-static zend_result dup_proc_descriptor(php_file_descriptor_t from, php_file_descriptor_t *to,
+static int dup_proc_descriptor(php_file_descriptor_t from, php_file_descriptor_t *to,
 	zend_ulong nindex)
 {
 #ifdef PHP_WIN32
@@ -852,7 +849,7 @@ static zend_result dup_proc_descriptor(php_file_descriptor_t from, php_file_desc
 	return SUCCESS;
 }
 
-static zend_result redirect_proc_descriptor(descriptorspec_item *desc, int target,
+static int redirect_proc_descriptor(descriptorspec_item *desc, int target,
 	descriptorspec_item *descriptors, int ndesc, int nindex)
 {
 	php_file_descriptor_t redirect_to = PHP_INVALID_FD;
@@ -888,7 +885,7 @@ static zend_result redirect_proc_descriptor(descriptorspec_item *desc, int targe
 }
 
 /* Process one item from `$descriptorspec` argument to `proc_open` */
-static zend_result set_proc_descriptor_from_array(zval *descitem, descriptorspec_item *descriptors,
+static int set_proc_descriptor_from_array(zval *descitem, descriptorspec_item *descriptors,
 	int ndesc, int nindex, int *pty_master_fd, int *pty_slave_fd) {
 	zend_string *ztype = get_string_parameter(descitem, 0, "handle qualifier");
 	if (!ztype) {
@@ -896,8 +893,7 @@ static zend_result set_proc_descriptor_from_array(zval *descitem, descriptorspec
 	}
 
 	zend_string *zmode = NULL, *zfile = NULL;
-	zend_result retval = FAILURE;
-
+	int retval = FAILURE;
 	if (zend_string_equals_literal(ztype, "pipe")) {
 		/* Set descriptor to pipe */
 		zmode = get_string_parameter(descitem, 1, "mode parameter for 'pipe'");
@@ -949,7 +945,7 @@ finish:
 	return retval;
 }
 
-static zend_result set_proc_descriptor_from_resource(zval *resource, descriptorspec_item *desc, int nindex)
+static int set_proc_descriptor_from_resource(zval *resource, descriptorspec_item *desc, int nindex)
 {
 	/* Should be a stream - try and dup the descriptor */
 	php_stream *stream = (php_stream*)zend_fetch_resource(Z_RES_P(resource), "stream",
@@ -959,7 +955,7 @@ static zend_result set_proc_descriptor_from_resource(zval *resource, descriptors
 	}
 
 	php_socket_t fd;
-	zend_result status = php_stream_cast(stream, PHP_STREAM_AS_FD, (void **)&fd, REPORT_ERRORS);
+	int status = php_stream_cast(stream, PHP_STREAM_AS_FD, (void **)&fd, REPORT_ERRORS);
 	if (status == FAILURE) {
 		return FAILURE;
 	}
@@ -969,11 +965,15 @@ static zend_result set_proc_descriptor_from_resource(zval *resource, descriptors
 #else
 	php_file_descriptor_t fd_t = fd;
 #endif
-	return dup_proc_descriptor(fd_t, &desc->childend, nindex);
+	if (dup_proc_descriptor(fd_t, &desc->childend, nindex) == FAILURE) {
+		return FAILURE;
+	}
+
+	return SUCCESS;
 }
 
 #ifndef PHP_WIN32
-static zend_result close_parentends_of_pipes(descriptorspec_item *descriptors, int ndesc)
+static int close_parentends_of_pipes(descriptorspec_item *descriptors, int ndesc)
 {
 	/* We are running in child process
 	 * Close the 'parent end' of pipes which were opened before forking/spawning
@@ -1023,12 +1023,12 @@ PHP_FUNCTION(proc_open_re)
 {
 	zend_string *command_str;
 	HashTable *command_ht;
-	HashTable *descriptorspec; /* Mandatory argument */
-	zval *pipes;               /* Mandatory argument */
+	zval *descriptorspec, *pipes;       /* Mandatory arguments */
 	char *cwd = NULL;                                /* Optional argument */
 	size_t cwd_len = 0;                              /* Optional argument */
 	zval *environment = NULL, *other_options = NULL; /* Optional arguments */
 
+	char *command = NULL;
 	php_process_env env;
 	int ndesc = 0;
 	int i;
@@ -1046,11 +1046,11 @@ PHP_FUNCTION(proc_open_re)
 	char cur_cwd[MAXPATHLEN];
 	wchar_t *cmdw = NULL, *cwdw = NULL, *envpw = NULL;
 	size_t cmdw_len;
-	bool suppress_errors = 0;
-	bool bypass_shell = 0;
-	bool blocking_pipes = 0;
-	bool create_process_group = 0;
-	bool create_new_console = 0;
+	int suppress_errors = 0;
+	int bypass_shell = 0;
+	int blocking_pipes = 0;
+	int create_process_group = 0;
+	int create_new_console = 0;
 #else
 	char **argv = NULL;
 #endif
@@ -1060,7 +1060,7 @@ PHP_FUNCTION(proc_open_re)
 
 	ZEND_PARSE_PARAMETERS_START(3, 6)
 		Z_PARAM_ARRAY_HT_OR_STR(command_ht, command_str)
-		Z_PARAM_ARRAY_HT(descriptorspec)
+		Z_PARAM_ARRAY(descriptorspec)
 		Z_PARAM_ZVAL(pipes)
 		Z_PARAM_OPTIONAL
 		Z_PARAM_STRING_OR_NULL(cwd, cwd_len)
@@ -1080,17 +1080,16 @@ PHP_FUNCTION(proc_open_re)
 #ifdef PHP_WIN32
 		/* Automatically bypass shell if command is given as an array */
 		bypass_shell = 1;
-		command_str = create_win_command_from_args(command_ht);
-#else
-		command_str = get_command_from_array(command_ht, &argv, num_elems);
-#endif
-
-		if (!command_str) {
-#ifndef PHP_WIN32
-			efree_argv(argv);
-#endif
+		command = create_win_command_from_args(command_ht);
+		if (!command) {
 			RETURN_FALSE;
 		}
+#else
+		command = get_command_from_array(command_ht, &argv, num_elems);
+		if (command == NULL) {
+			goto exit_fail;
+		}
+#endif
 	} else {
 #ifdef HAVE_EXECDIR
 		if (strlen(ZSTR_VAL(command_str)) != ZSTR_LEN(command_str)) {
@@ -1099,27 +1098,25 @@ PHP_FUNCTION(proc_open_re)
 		}
 		{
 			char * jcommand = get_jailed_shell_cmd (ZSTR_VAL(command_str));
-			zend_string * jcommand_str = NULL;
 			if (jcommand == NULL) {
 				RETURN_FALSE;
 			}
-			jcommand_str = zend_string_init (jcommand, strlen (jcommand), 0);
-			command_str = zend_string_dup (jcommand_str, 0);
+			command = estrdup(jcommand);
 			efree (jcommand);
-			zend_string_release (jcommand_str);
 		}
+#else
+		command = estrdup(ZSTR_VAL(command_str));
 #endif
-		zend_string_addref(command_str);
 	}
 
 #ifdef PHP_WIN32
 	if (other_options) {
-		suppress_errors      = get_option(other_options, "suppress_errors", strlen("suppress_errors"));
+		suppress_errors      = get_option(other_options, "suppress_errors");
 		/* TODO: Deprecate in favor of array command? */
-		bypass_shell         = bypass_shell || get_option(other_options, "bypass_shell", strlen("bypass_shell"));
-		blocking_pipes       = get_option(other_options, "blocking_pipes", strlen("blocking_pipes"));
-		create_process_group = get_option(other_options, "create_process_group", strlen("create_process_group"));
-		create_new_console   = get_option(other_options, "create_new_console", strlen("create_new_console"));
+		bypass_shell         = bypass_shell || get_option(other_options, "bypass_shell");
+		blocking_pipes       = get_option(other_options, "blocking_pipes");
+		create_process_group = get_option(other_options, "create_process_group");
+		create_new_console   = get_option(other_options, "create_new_console");
 	}
 #endif
 
@@ -1130,7 +1127,7 @@ PHP_FUNCTION(proc_open_re)
 	descriptors = alloc_descriptor_array(descriptorspec);
 
 	/* Walk the descriptor spec and set up files/pipes */
-	ZEND_HASH_FOREACH_KEY_VAL(descriptorspec, nindex, str_index, descitem) {
+	ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(descriptorspec), nindex, str_index, descitem) {
 		if (str_index) {
 			zend_argument_value_error(2, "must be an integer indexed array");
 			goto exit_fail;
@@ -1196,7 +1193,7 @@ PHP_FUNCTION(proc_open_re)
 		}
 	}
 
-	cmdw = php_win32_cp_conv_any_to_w(ZSTR_VAL(command_str), ZSTR_LEN(command_str), &cmdw_len);
+	cmdw = php_win32_cp_conv_any_to_w(command, strlen(command), &cmdw_len);
 	if (!cmdw) {
 		php_error_docref(NULL, E_WARNING, "Command conversion failed");
 		goto exit_fail;
@@ -1247,12 +1244,12 @@ PHP_FUNCTION(proc_open_re)
 			if (env.envarray) {
 				environ = env.envarray;
 			}
-			execvp(ZSTR_VAL(command_str), argv);
+			execvp(command, argv);
 		} else {
 			if (env.envarray) {
-				execle("/bin/sh", "sh", "-c", ZSTR_VAL(command_str), NULL, env.envarray);
+				execle("/bin/sh", "sh", "-c", command, NULL, env.envarray);
 			} else {
-				execl("/bin/sh", "sh", "-c", ZSTR_VAL(command_str), NULL);
+				execl("/bin/sh", "sh", "-c", command, NULL);
 			}
 		}
 
@@ -1278,7 +1275,7 @@ PHP_FUNCTION(proc_open_re)
 	}
 
 	proc = (php_process_handle*) emalloc(sizeof(php_process_handle));
-	proc->command = zend_string_copy(command_str);
+	proc->command = command;
 	proc->pipes = emalloc(sizeof(zend_resource *) * ndesc);
 	proc->npipes = ndesc;
 	proc->child = child;
@@ -1349,10 +1346,12 @@ PHP_FUNCTION(proc_open_re)
 	} else {
 exit_fail:
 		_php_free_envp(env);
+		if (command) {
+			efree(command);
+		}
 		RETVAL_FALSE;
 	}
 
-	zend_string_release_ex(command_str, false);
 #ifdef PHP_WIN32
 	free(cwdw);
 	free(cmdw);

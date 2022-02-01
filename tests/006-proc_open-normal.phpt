@@ -17,7 +17,13 @@ if ( ! file_exists ($datafile) )
 	$datafile = getcwd () . '/data.txt';
 
 putenv ('LANG=C');
-$proc = proc_open ("cat ${datafile}",
+#if ( version_compare (phpversion(), '7.4.0', '>=') ) {
+#	$cmd = array ("cat", "${datafile}");
+#} else {
+	$cmd = "cat ${datafile}";
+#}
+$proc = proc_open (
+	$cmd,
 	array(
 		array ('pipe', 'r'),
 		array ('pipe', 'w'),
