@@ -85,7 +85,7 @@ case "${mode}" in
 		PHPBIN=/opt/php-qa/php${2}/bin/php
 		PHPIZE=/opt/php-qa/php${2}/bin/phpize
 		PHPCONFIG=/opt/php-qa/php${2}/bin/php-config
-		PHP_OPT=""
+		PHP_OPT="-n"
 		LEGACY_TEST=0
 
 		if [[ $# == 2 ]]; then
@@ -95,10 +95,11 @@ case "${mode}" in
 
 			if [[ ! -f ./run-tests.php ]]; then
 				LEGACY_TEST=1
-				PHP_OPT="-n -d 'enable_dl=1' -d 'safe_mode=0' -d 'disable_error=0'"
+				PHP_OPT="-d 'enable_dl=1' -d 'safe_mode=0' -d 'disable_error=0'"
 			fi
 		fi
-		PHP_OPT+=" -d 'track_errors=1' -d 'extension_dir=./modules/' -d 'extension=${mod_name}.so'"
+		(( $2 < 81 )) && PHP_OPT+=" -d 'track_errors=1'"
+		PHP_OPT+=" -d 'extension_dir=./modules/' -d 'extension=${mod_name}.so'"
 
 		if [[ -f tests/${3}.php ]]; then
 			cat <<-EOL
