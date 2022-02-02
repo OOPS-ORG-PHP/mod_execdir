@@ -56,8 +56,8 @@ diff -urNp php-7.4.16.org/configure.ac php-7.4.16/configure.ac
  
 +AC_MSG_CHECKING([for exec dir])
 +PHP_ARG_WITH(exec-dir,,
-+[  --with-exec-dir[=DIR]   Only allow executables in DIR
-+                          [/var/lib/php/bin]], no, no)
++[  --with-exec-dir=DIR     Only allow executables in DIR
++                          [[Default: /var/lib/php/bin]]], no, no)
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
 +   AC_DEFINE_UNQUOTED(PHP_EXEC_DIR, "$PHP_EXEC_DIR", [ ])

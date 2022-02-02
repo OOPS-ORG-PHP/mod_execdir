@@ -1,20 +1,29 @@
 diff -urNp php-5.6.29.org/configure php-5.6.29/configure
 --- php-5.6.29.org/configure	2016-12-08 15:32:01.000000000 +0900
-+++ php-5.6.29/configure	2017-01-07 01:17:51.728286116 +0900
-@@ -21511,6 +21511,45 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
++++ php-5.6.29/configure	2022-02-02 16:47:58.749226427 +0900
+@@ -1783,6 +1783,8 @@ General settings:
+                           Set the path in which to look for php.ini [PREFIX/lib]
+   --with-config-file-scan-dir=PATH
+                           Set the path where to scan for configuration files
++  --with-exec-dir=DIR     Only allow executables in DIR
++                          [Default: /var/lib/php/bin]
+   --enable-sigchild       Enable PHP's own SIGCHLD handler
+   --enable-libgcc         Enable explicitly linking against libgcc
+   --disable-short-tags    Disable the short-form <? start tag by default
+@@ -21510,6 +21512,46 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
+ 
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
- 
-+echo $ac_n "checking for safe mode exec dir""... $ac_c" 1>&6
-+echo "configure:20296: checking for safe mode exec dir" >&5
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for exec dir" >&5
++$as_echo_n "checking for exec dir... " >&6; }
 +
 +php_with_exec_dir=no
 +
 +
-+# Check whether --with-exec-dir or --without-exec-dir was given.
-+if test "${with_exec_dir+set}" = set; then
-+  withval="$with_exec_dir"
-+  PHP_EXEC_DIR=$withval
++
++# Check whether --with-exec-dir was given.
++if test "${with_exec_dir+set}" = set; then :
++  withval=$with_exec_dir; PHP_EXEC_DIR=$withval
 +else
 +
 +  PHP_EXEC_DIR=no
@@ -30,34 +39,35 @@ diff -urNp php-5.6.29.org/configure php-5.6.29/configure
 +
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
-+  cat >> confdefs.h <<EOF
++
++cat >>confdefs.h <<_ACEOF
 +#define PHP_EXEC_DIR "$PHP_EXEC_DIR"
-+EOF
++_ACEOF
 +
-+  echo "$ac_t""$PHP_EXEC_DIR" 1>&6
++	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PHP_EXEC_DIR" >&5
++$as_echo "$PHP_EXEC_DIR" >&6; }
 +else
-+  cat >> confdefs.h <<\EOF
-+#define PHP_EXEC_DIR "/usr/local/php/bin"
-+EOF
 +
-+  echo "$ac_t""/usr/local/php/bin" 1>&6
++$as_echo "#define PHP_EXEC_DIR \"/var/lib/php/bin\"" >>confdefs.h
++
++	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: /var/lib/php/bin" >&5
++$as_echo "/var/lib/php/bin" >&6; }
 +fi
 +
-+
+ 
  php_enable_sigchild=no
  
- { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PHP's own SIGCHLD handler" >&5
 diff -urNp php-5.6.29.org/configure.in php-5.6.29/configure.in
 --- php-5.6.29.org/configure.in	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/configure.in	2017-01-07 01:17:51.732286336 +0900
++++ php-5.6.29/configure.in	2022-02-02 16:47:27.861315551 +0900
 @@ -917,6 +917,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
  
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
 +AC_MSG_CHECKING([for exec dir])
 +PHP_ARG_WITH(exec-dir,,
-+[  --with-exec-dir[=DIR]   Only allow executables in DIR
-+                          [/var/lib/php/bin]], no, no)
++[  --with-exec-dir=DIR     Only allow executables in DIR
++                          [[Default: /var/lib/php/bin]]], no, no)
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
 +	AC_DEFINE_UNQUOTED(PHP_EXEC_DIR, "$PHP_EXEC_DIR", [ ])
@@ -72,7 +82,7 @@ diff -urNp php-5.6.29.org/configure.in php-5.6.29/configure.in
  
 diff -urNp php-5.6.29.org/ext/pcntl/pcntl.c php-5.6.29/ext/pcntl/pcntl.c
 --- php-5.6.29.org/ext/pcntl/pcntl.c	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/ext/pcntl/pcntl.c	2017-01-07 01:17:51.733286391 +0900
++++ php-5.6.29/ext/pcntl/pcntl.c	2022-02-02 16:47:27.861315551 +0900
 @@ -46,6 +46,9 @@
  
  #include <errno.h>
@@ -141,7 +151,7 @@ diff -urNp php-5.6.29.org/ext/pcntl/pcntl.c php-5.6.29/ext/pcntl/pcntl.c
  	RETURN_FALSE;
 diff -urNp php-5.6.29.org/ext/standard/exec.c php-5.6.29/ext/standard/exec.c
 --- php-5.6.29.org/ext/standard/exec.c	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/ext/standard/exec.c	2017-01-07 01:17:55.497492767 +0900
++++ php-5.6.29/ext/standard/exec.c	2022-02-02 16:47:27.862315581 +0900
 @@ -105,7 +105,7 @@ PHPAPI int php_exec(int type, char *cmd,
  	FILE *fp;
  	char *buf;
@@ -692,7 +702,7 @@ diff -urNp php-5.6.29.org/ext/standard/exec.c php-5.6.29/ext/standard/exec.c
  	total_readbytes = php_stream_copy_to_mem(stream, &ret, PHP_STREAM_COPY_ALL, 0);
 diff -urNp php-5.6.29.org/ext/standard/exec.h php-5.6.29/ext/standard/exec.h
 --- php-5.6.29.org/ext/standard/exec.h	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/ext/standard/exec.h	2017-01-07 01:17:55.498492821 +0900
++++ php-5.6.29/ext/standard/exec.h	2022-02-02 16:47:27.862315581 +0900
 @@ -35,8 +35,33 @@ PHP_FUNCTION(proc_nice);
  PHP_MINIT_FUNCTION(proc_open);
  PHP_MINIT_FUNCTION(exec);
@@ -729,7 +739,7 @@ diff -urNp php-5.6.29.org/ext/standard/exec.h php-5.6.29/ext/standard/exec.h
  #endif /* EXEC_H */
 diff -urNp php-5.6.29.org/ext/standard/file.c php-5.6.29/ext/standard/file.c
 --- php-5.6.29.org/ext/standard/file.c	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/ext/standard/file.c	2017-01-07 01:17:51.736286555 +0900
++++ php-5.6.29/ext/standard/file.c	2022-02-02 16:47:27.863315610 +0900
 @@ -924,7 +924,7 @@ PHPAPI PHP_FUNCTION(fclose)
     Execute a command and open either a read or a write pipe to it */
  PHP_FUNCTION(popen)
@@ -765,7 +775,7 @@ diff -urNp php-5.6.29.org/ext/standard/file.c php-5.6.29/ext/standard/file.c
  		efree(posix_mode);
 diff -urNp php-5.6.29.org/ext/standard/proc_open.c php-5.6.29/ext/standard/proc_open.c
 --- php-5.6.29.org/ext/standard/proc_open.c	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/ext/standard/proc_open.c	2017-01-07 01:17:51.736286555 +0900
++++ php-5.6.29/ext/standard/proc_open.c	2022-02-02 16:47:27.864315640 +0900
 @@ -451,7 +451,7 @@ struct php_proc_open_descriptor_item {
     Run a process with more control over it's file descriptors */
  PHP_FUNCTION(proc_open)
@@ -793,7 +803,7 @@ diff -urNp php-5.6.29.org/ext/standard/proc_open.c php-5.6.29/ext/standard/proc_
  	if (other_options) {
 diff -urNp php-5.6.29.org/main/main.c php-5.6.29/main/main.c
 --- php-5.6.29.org/main/main.c	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/main/main.c	2017-01-07 01:17:51.737286610 +0900
++++ php-5.6.29/main/main.c	2022-02-02 16:47:27.864315640 +0900
 @@ -536,6 +536,10 @@ static PHP_INI_MH(OnChangeAlwaysPopulate
   * PHP_INCLUDE_PATH
   */
@@ -815,7 +825,7 @@ diff -urNp php-5.6.29.org/main/main.c php-5.6.29/main/main.c
  	STD_PHP_INI_ENTRY("upload_max_filesize",	"2M",		PHP_INI_SYSTEM|PHP_INI_PERDIR,		OnUpdateLong,			upload_max_filesize,	php_core_globals,	core_globals)
 diff -urNp php-5.6.29.org/main/php_config.h.in php-5.6.29/main/php_config.h.in
 --- php-5.6.29.org/main/php_config.h.in	2016-12-08 15:32:02.000000000 +0900
-+++ php-5.6.29/main/php_config.h.in	2017-01-07 01:17:51.738286665 +0900
++++ php-5.6.29/main/php_config.h.in	2022-02-02 16:47:27.865315669 +0900
 @@ -2289,6 +2289,9 @@
  /* whether pwrite64 is default */
  #undef PHP_PWRITE_64
@@ -828,7 +838,7 @@ diff -urNp php-5.6.29.org/main/php_config.h.in php-5.6.29/main/php_config.h.in
  
 diff -urNp php-5.6.29.org/main/php_globals.h php-5.6.29/main/php_globals.h
 --- php-5.6.29.org/main/php_globals.h	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/main/php_globals.h	2017-01-07 01:17:51.739286720 +0900
++++ php-5.6.29/main/php_globals.h	2022-02-02 16:47:27.865315669 +0900
 @@ -164,6 +164,8 @@ struct _php_core_globals {
  
  	zend_bool in_error_log;
@@ -840,7 +850,7 @@ diff -urNp php-5.6.29.org/main/php_globals.h php-5.6.29/main/php_globals.h
  #endif
 diff -urNp php-5.6.29.org/php.ini-development php-5.6.29/php.ini-development
 --- php-5.6.29.org/php.ini-development	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/php.ini-development	2017-01-07 01:17:51.739286720 +0900
++++ php-5.6.29/php.ini-development	2022-02-02 16:47:27.866315699 +0900
 @@ -291,6 +291,11 @@ unserialize_callback_func =
  ; are decoded with unserialize, the data will remain the same.
  serialize_precision = 17
@@ -855,7 +865,7 @@ diff -urNp php-5.6.29.org/php.ini-development php-5.6.29/php.ini-development
  ; or per-virtualhost web server configuration file.
 diff -urNp php-5.6.29.org/php.ini-production php-5.6.29/php.ini-production
 --- php-5.6.29.org/php.ini-production	2016-12-08 15:29:33.000000000 +0900
-+++ php-5.6.29/php.ini-production	2017-01-07 01:17:51.740286774 +0900
++++ php-5.6.29/php.ini-production	2022-02-02 16:47:27.866315699 +0900
 @@ -291,6 +291,11 @@ unserialize_callback_func =
  ; are decoded with unserialize, the data will remain the same.
  serialize_precision = 17

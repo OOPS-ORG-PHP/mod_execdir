@@ -1,20 +1,29 @@
 diff -urNp php-7.1.33.org/configure php-7.1.33/configure
 --- php-7.1.33.org/configure	2019-10-23 01:59:36.000000000 +0900
-+++ php-7.1.33/configure	2020-05-25 02:57:08.643747971 +0900
-@@ -15730,6 +15730,45 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
++++ php-7.1.33/configure	2022-02-02 16:18:01.689039324 +0900
+@@ -1771,6 +1771,8 @@ General settings:
+                           Set the path in which to look for php.ini [PREFIX/lib]
+   --with-config-file-scan-dir=PATH
+                           Set the path where to scan for configuration files
++  --with-exec-dir=DIR     Only allow executables in DIR
++                          [Default: /var/lib/php/bin]
+   --enable-sigchild       Enable PHP's own SIGCHLD handler
+   --enable-libgcc         Enable explicitly linking against libgcc
+   --disable-short-tags    Disable the short-form <? start tag by default
+@@ -15729,6 +15731,46 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
+ 
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
- 
-+echo $ac_n "checking for safe mode exec dir""... $ac_c" 1>&6
-+echo "configure:20296: checking for safe mode exec dir" >&5
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for exec dir" >&5
++$as_echo_n "checking for exec dir... " >&6; }
 +
 +php_with_exec_dir=no
 +
 +
-+# Check whether --with-exec-dir or --without-exec-dir was given.
-+if test "${with_exec_dir+set}" = set; then
-+  withval="$with_exec_dir"
-+  PHP_EXEC_DIR=$withval
++
++# Check whether --with-exec-dir was given.
++if test "${with_exec_dir+set}" = set; then :
++  withval=$with_exec_dir; PHP_EXEC_DIR=$withval
 +else
 +
 +  PHP_EXEC_DIR=no
@@ -30,34 +39,35 @@ diff -urNp php-7.1.33.org/configure php-7.1.33/configure
 +
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
-+  cat >> confdefs.h <<EOF
++
++cat >>confdefs.h <<_ACEOF
 +#define PHP_EXEC_DIR "$PHP_EXEC_DIR"
-+EOF
++_ACEOF
 +
-+  echo "$ac_t""$PHP_EXEC_DIR" 1>&6
++	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $PHP_EXEC_DIR" >&5
++$as_echo "$PHP_EXEC_DIR" >&6; }
 +else
-+  cat >> confdefs.h <<\EOF
-+#define PHP_EXEC_DIR "/usr/local/php/bin"
-+EOF
 +
-+  echo "$ac_t""/usr/local/php/bin" 1>&6
++$as_echo "#define PHP_EXEC_DIR \"/var/lib/php/bin\"" >>confdefs.h
++
++	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: /var/lib/php/bin" >&5
++$as_echo "/var/lib/php/bin" >&6; }
 +fi
 +
-+
+ 
  php_enable_sigchild=no
  
- { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PHP's own SIGCHLD handler" >&5
 diff -urNp php-7.1.33.org/configure.in php-7.1.33/configure.in
 --- php-7.1.33.org/configure.in	2019-10-23 01:59:36.000000000 +0900
-+++ php-7.1.33/configure.in	2020-05-25 02:57:08.645748030 +0900
++++ php-7.1.33/configure.in	2022-02-02 16:16:54.111035418 +0900
 @@ -927,6 +927,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
  
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
 +AC_MSG_CHECKING([for exec dir])
 +PHP_ARG_WITH(exec-dir,,
-+[  --with-exec-dir[=DIR]   Only allow executables in DIR
-+                          [/var/lib/php/bin]], no, no)
++[  --with-exec-dir=DIR     Only allow executables in DIR
++                          [[Default: /var/lib/php/bin]]], no, no)
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
 +	AC_DEFINE_UNQUOTED(PHP_EXEC_DIR, "$PHP_EXEC_DIR", [ ])
@@ -72,7 +82,7 @@ diff -urNp php-7.1.33.org/configure.in php-7.1.33/configure.in
  
 diff -urNp php-7.1.33.org/ext/pcntl/pcntl.c php-7.1.33/ext/pcntl/pcntl.c
 --- php-7.1.33.org/ext/pcntl/pcntl.c	2019-10-23 01:59:43.000000000 +0900
-+++ php-7.1.33/ext/pcntl/pcntl.c	2020-05-25 02:57:08.646748060 +0900
++++ php-7.1.33/ext/pcntl/pcntl.c	2022-02-02 16:16:54.111035418 +0900
 @@ -46,6 +46,9 @@
  
  #include <errno.h>
@@ -141,7 +151,7 @@ diff -urNp php-7.1.33.org/ext/pcntl/pcntl.c php-7.1.33/ext/pcntl/pcntl.c
  	RETURN_FALSE;
 diff -urNp php-7.1.33.org/ext/standard/exec.c php-7.1.33/ext/standard/exec.c
 --- php-7.1.33.org/ext/standard/exec.c	2019-10-23 02:00:02.000000000 +0900
-+++ php-7.1.33/ext/standard/exec.c	2020-05-25 02:57:08.646748060 +0900
++++ php-7.1.33/ext/standard/exec.c	2022-02-02 16:16:54.112035448 +0900
 @@ -96,7 +96,7 @@ PHPAPI int php_exec(int type, char *cmd,
  	char *buf;
  	size_t l = 0;
@@ -714,7 +724,7 @@ diff -urNp php-7.1.33.org/ext/standard/exec.c php-7.1.33/ext/standard/exec.c
  	ret = php_stream_copy_to_mem(stream, PHP_STREAM_COPY_ALL, 0);
 diff -urNp php-7.1.33.org/ext/standard/exec.h php-7.1.33/ext/standard/exec.h
 --- php-7.1.33.org/ext/standard/exec.h	2019-10-23 02:00:02.000000000 +0900
-+++ php-7.1.33/ext/standard/exec.h	2020-05-25 02:57:08.647748090 +0900
++++ php-7.1.33/ext/standard/exec.h	2022-02-02 16:16:54.112035448 +0900
 @@ -35,8 +35,33 @@ PHP_FUNCTION(proc_nice);
  PHP_MINIT_FUNCTION(proc_open);
  PHP_MINIT_FUNCTION(exec);
@@ -751,7 +761,7 @@ diff -urNp php-7.1.33.org/ext/standard/exec.h php-7.1.33/ext/standard/exec.h
  #endif /* EXEC_H */
 diff -urNp php-7.1.33.org/ext/standard/file.c php-7.1.33/ext/standard/file.c
 --- php-7.1.33.org/ext/standard/file.c	2019-10-23 01:59:57.000000000 +0900
-+++ php-7.1.33/ext/standard/file.c	2020-05-25 02:57:08.647748090 +0900
++++ php-7.1.33/ext/standard/file.c	2022-02-02 16:16:54.113035478 +0900
 @@ -907,7 +907,7 @@ PHPAPI PHP_FUNCTION(fclose)
     Execute a command and open either a read or a write pipe to it */
  PHP_FUNCTION(popen)
@@ -787,7 +797,7 @@ diff -urNp php-7.1.33.org/ext/standard/file.c php-7.1.33/ext/standard/file.c
  		efree(posix_mode);
 diff -urNp php-7.1.33.org/ext/standard/proc_open.c php-7.1.33/ext/standard/proc_open.c
 --- php-7.1.33.org/ext/standard/proc_open.c	2019-10-23 01:59:57.000000000 +0900
-+++ php-7.1.33/ext/standard/proc_open.c	2020-05-25 02:57:08.648748119 +0900
++++ php-7.1.33/ext/standard/proc_open.c	2022-02-02 16:16:54.114035507 +0900
 @@ -412,7 +412,7 @@ struct php_proc_open_descriptor_item {
     Run a process with more control over it's file descriptors */
  PHP_FUNCTION(proc_open)
@@ -815,7 +825,7 @@ diff -urNp php-7.1.33.org/ext/standard/proc_open.c php-7.1.33/ext/standard/proc_
  	if (other_options) {
 diff -urNp php-7.1.33.org/main/main.c php-7.1.33/main/main.c
 --- php-7.1.33.org/main/main.c	2019-10-23 02:00:03.000000000 +0900
-+++ php-7.1.33/main/main.c	2020-05-25 02:57:08.649748149 +0900
++++ php-7.1.33/main/main.c	2022-02-02 16:16:54.114035507 +0900
 @@ -536,6 +536,10 @@ PHP_INI_MH(OnChangeBrowscap);
   * PHP_INCLUDE_PATH
   */
@@ -837,7 +847,7 @@ diff -urNp php-7.1.33.org/main/main.c php-7.1.33/main/main.c
  	STD_PHP_INI_ENTRY("upload_max_filesize",	"2M",		PHP_INI_SYSTEM|PHP_INI_PERDIR,		OnUpdateLong,			upload_max_filesize,	php_core_globals,	core_globals)
 diff -urNp php-7.1.33.org/main/php_config.h.in php-7.1.33/main/php_config.h.in
 --- php-7.1.33.org/main/php_config.h.in	2019-10-23 02:00:03.000000000 +0900
-+++ php-7.1.33/main/php_config.h.in	2020-05-25 02:57:08.649748149 +0900
++++ php-7.1.33/main/php_config.h.in	2022-02-02 16:16:54.115035537 +0900
 @@ -2282,6 +2282,9 @@
  #undef PHP_PWRITE_64
  
@@ -850,7 +860,7 @@ diff -urNp php-7.1.33.org/main/php_config.h.in php-7.1.33/main/php_config.h.in
  /* uname -a output */
 diff -urNp php-7.1.33.org/main/php_globals.h php-7.1.33/main/php_globals.h
 --- php-7.1.33.org/main/php_globals.h	2019-10-23 02:00:03.000000000 +0900
-+++ php-7.1.33/main/php_globals.h	2020-05-25 02:57:08.649748149 +0900
++++ php-7.1.33/main/php_globals.h	2022-02-02 16:16:54.115035537 +0900
 @@ -169,6 +169,8 @@ struct _php_core_globals {
  
  	zend_bool in_error_log;
@@ -862,7 +872,7 @@ diff -urNp php-7.1.33.org/main/php_globals.h php-7.1.33/main/php_globals.h
  #endif
 diff -urNp php-7.1.33.org/php.ini-development php-7.1.33/php.ini-development
 --- php-7.1.33.org/php.ini-development	2019-10-23 02:00:03.000000000 +0900
-+++ php-7.1.33/php.ini-development	2020-05-25 02:57:08.650748179 +0900
++++ php-7.1.33/php.ini-development	2022-02-02 16:16:54.116035566 +0900
 @@ -302,6 +302,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1
@@ -877,7 +887,7 @@ diff -urNp php-7.1.33.org/php.ini-development php-7.1.33/php.ini-development
  ; or per-virtualhost web server configuration file.
 diff -urNp php-7.1.33.org/php.ini-production php-7.1.33/php.ini-production
 --- php-7.1.33.org/php.ini-production	2019-10-23 01:59:36.000000000 +0900
-+++ php-7.1.33/php.ini-production	2020-05-25 02:57:08.650748179 +0900
++++ php-7.1.33/php.ini-production	2022-02-02 16:16:54.116035566 +0900
 @@ -302,6 +302,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1

@@ -1,9 +1,18 @@
-diff -urNp php-7.2.31.org/configure php-7.2.31/configure
---- php-7.2.31.org/configure	2020-05-12 16:02:26.000000000 +0900
-+++ php-7.2.31/configure	2020-05-25 02:47:34.064693657 +0900
-@@ -16130,6 +16130,45 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
- test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
+diff -urNp php-7.2.34.org/configure php-7.2.34/configure
+--- php-7.2.34.org/configure	2020-09-30 14:15:55.000000000 +0900
++++ php-7.2.34/configure	2022-02-02 16:13:28.754946643 +0900
+@@ -1766,6 +1766,8 @@ General settings:
+                           Set the path in which to look for php.ini [PREFIX/lib]
+   --with-config-file-scan-dir=PATH
+                           Set the path where to scan for configuration files
++  --with-exec-dir=DIR     Only allow executables in DIR
++                          [Default: /var/lib/php/bin]
+   --enable-sigchild       Enable PHP's own SIGCHLD handler
+   --enable-libgcc         Enable explicitly linking against libgcc
+   --disable-short-tags    Disable the short-form <? start tag by default
+@@ -16129,6 +16131,44 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
  
+ test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
 +echo $ac_n "checking for safe mode exec dir""... $ac_c" 1>&6
 +echo "configure:20296: checking for safe mode exec dir" >&5
@@ -43,21 +52,20 @@ diff -urNp php-7.2.31.org/configure php-7.2.31/configure
 +  echo "$ac_t""/usr/local/php/bin" 1>&6
 +fi
 +
-+
+ 
  php_enable_sigchild=no
  
- { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PHP's own SIGCHLD handler" >&5
-diff -urNp php-7.2.31.org/configure.ac php-7.2.31/configure.ac
---- php-7.2.31.org/configure.ac	2020-05-12 16:02:21.000000000 +0900
-+++ php-7.2.31/configure.ac	2020-05-25 02:47:34.066693717 +0900
+diff -urNp php-7.2.34.org/configure.ac php-7.2.34/configure.ac
+--- php-7.2.34.org/configure.ac	2020-09-30 14:15:50.000000000 +0900
++++ php-7.2.34/configure.ac	2022-02-02 16:12:12.128675303 +0900
 @@ -938,6 +938,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
  
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
 +AC_MSG_CHECKING([for exec dir])
 +PHP_ARG_WITH(exec-dir,,
-+[  --with-exec-dir[=DIR]   Only allow executables in DIR
-+                          [/var/lib/php/bin]], no, no)
++[  --with-exec-dir=DIR     Only allow executables in DIR
++                          [[Default: /var/lib/php/bin]]], no, no)
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
 +	AC_DEFINE_UNQUOTED(PHP_EXEC_DIR, "$PHP_EXEC_DIR", [ ])
@@ -70,9 +78,9 @@ diff -urNp php-7.2.31.org/configure.ac php-7.2.31/configure.ac
  PHP_ARG_ENABLE(sigchild, whether to enable PHP's own SIGCHLD handler,
  [  --enable-sigchild       Enable PHP's own SIGCHLD handler], no, no)
  
-diff -urNp php-7.2.31.org/ext/pcntl/pcntl.c php-7.2.31/ext/pcntl/pcntl.c
---- php-7.2.31.org/ext/pcntl/pcntl.c	2020-05-12 16:02:23.000000000 +0900
-+++ php-7.2.31/ext/pcntl/pcntl.c	2020-05-25 02:47:34.067693746 +0900
+diff -urNp php-7.2.34.org/ext/pcntl/pcntl.c php-7.2.34/ext/pcntl/pcntl.c
+--- php-7.2.34.org/ext/pcntl/pcntl.c	2020-09-30 14:15:52.000000000 +0900
++++ php-7.2.34/ext/pcntl/pcntl.c	2022-02-02 16:12:12.129675333 +0900
 @@ -54,6 +54,9 @@
  # endif
  #endif
@@ -139,9 +147,9 @@ diff -urNp php-7.2.31.org/ext/pcntl/pcntl.c php-7.2.31/ext/pcntl/pcntl.c
  	efree(argv);
  
  	RETURN_FALSE;
-diff -urNp php-7.2.31.org/ext/standard/exec.c php-7.2.31/ext/standard/exec.c
---- php-7.2.31.org/ext/standard/exec.c	2020-05-12 16:02:21.000000000 +0900
-+++ php-7.2.31/ext/standard/exec.c	2020-05-25 02:48:48.673902385 +0900
+diff -urNp php-7.2.34.org/ext/standard/exec.c php-7.2.34/ext/standard/exec.c
+--- php-7.2.34.org/ext/standard/exec.c	2020-09-30 14:15:50.000000000 +0900
++++ php-7.2.34/ext/standard/exec.c	2022-02-02 16:12:12.129675333 +0900
 @@ -100,7 +100,7 @@ PHPAPI int php_exec(int type, char *cmd,
  	char *buf;
  	size_t l = 0;
@@ -708,9 +716,9 @@ diff -urNp php-7.2.31.org/ext/standard/exec.c php-7.2.31/ext/standard/exec.c
  
  	stream = php_stream_fopen_from_pipe(in, "rb");
  	ret = php_stream_copy_to_mem(stream, PHP_STREAM_COPY_ALL, 0);
-diff -urNp php-7.2.31.org/ext/standard/exec.h php-7.2.31/ext/standard/exec.h
---- php-7.2.31.org/ext/standard/exec.h	2020-05-12 16:02:21.000000000 +0900
-+++ php-7.2.31/ext/standard/exec.h	2020-05-25 02:47:34.068693776 +0900
+diff -urNp php-7.2.34.org/ext/standard/exec.h php-7.2.34/ext/standard/exec.h
+--- php-7.2.34.org/ext/standard/exec.h	2020-09-30 14:15:50.000000000 +0900
++++ php-7.2.34/ext/standard/exec.h	2022-02-02 16:12:12.130675363 +0900
 @@ -35,8 +35,33 @@ PHP_FUNCTION(proc_nice);
  PHP_MINIT_FUNCTION(proc_open);
  PHP_MINIT_FUNCTION(exec);
@@ -745,9 +753,9 @@ diff -urNp php-7.2.31.org/ext/standard/exec.h php-7.2.31/ext/standard/exec.h
  PHPAPI int php_exec(int type, char *cmd, zval *array, zval *return_value);
  
  #endif /* EXEC_H */
-diff -urNp php-7.2.31.org/ext/standard/file.c php-7.2.31/ext/standard/file.c
---- php-7.2.31.org/ext/standard/file.c	2020-05-12 16:02:21.000000000 +0900
-+++ php-7.2.31/ext/standard/file.c	2020-05-25 02:47:34.069693805 +0900
+diff -urNp php-7.2.34.org/ext/standard/file.c php-7.2.34/ext/standard/file.c
+--- php-7.2.34.org/ext/standard/file.c	2020-09-30 14:15:50.000000000 +0900
++++ php-7.2.34/ext/standard/file.c	2022-02-02 16:12:12.131675392 +0900
 @@ -926,7 +926,7 @@ PHPAPI PHP_FUNCTION(fclose)
     Execute a command and open either a read or a write pipe to it */
  PHP_FUNCTION(popen)
@@ -781,9 +789,9 @@ diff -urNp php-7.2.31.org/ext/standard/file.c php-7.2.31/ext/standard/file.c
  	if (!fp) {
  		php_error_docref2(NULL, command, posix_mode, E_WARNING, "%s", strerror(errno));
  		efree(posix_mode);
-diff -urNp php-7.2.31.org/ext/standard/proc_open.c php-7.2.31/ext/standard/proc_open.c
---- php-7.2.31.org/ext/standard/proc_open.c	2020-05-12 16:02:21.000000000 +0900
-+++ php-7.2.31/ext/standard/proc_open.c	2020-05-25 02:47:34.069693805 +0900
+diff -urNp php-7.2.34.org/ext/standard/proc_open.c php-7.2.34/ext/standard/proc_open.c
+--- php-7.2.34.org/ext/standard/proc_open.c	2020-09-30 14:15:50.000000000 +0900
++++ php-7.2.34/ext/standard/proc_open.c	2022-02-02 16:12:12.131675392 +0900
 @@ -406,7 +406,7 @@ struct php_proc_open_descriptor_item {
     Run a process with more control over it's file descriptors */
  PHP_FUNCTION(proc_open)
@@ -809,9 +817,9 @@ diff -urNp php-7.2.31.org/ext/standard/proc_open.c php-7.2.31/ext/standard/proc_
  
  #ifdef PHP_WIN32
  	if (other_options) {
-diff -urNp php-7.2.31.org/main/main.c php-7.2.31/main/main.c
---- php-7.2.31.org/main/main.c	2020-05-12 16:02:21.000000000 +0900
-+++ php-7.2.31/main/main.c	2020-05-25 02:47:34.070693835 +0900
+diff -urNp php-7.2.34.org/main/main.c php-7.2.34/main/main.c
+--- php-7.2.34.org/main/main.c	2020-09-30 14:15:50.000000000 +0900
++++ php-7.2.34/main/main.c	2022-02-02 16:12:12.132675422 +0900
 @@ -531,6 +531,10 @@ PHP_INI_MH(OnChangeBrowscap);
   * PHP_INCLUDE_PATH
   */
@@ -831,9 +839,9 @@ diff -urNp php-7.2.31.org/main/main.c php-7.2.31/main/main.c
  
  	STD_PHP_INI_BOOLEAN("file_uploads",			"1",		PHP_INI_SYSTEM,		OnUpdateBool,			file_uploads,			php_core_globals,	core_globals)
  	STD_PHP_INI_ENTRY("upload_max_filesize",	"2M",		PHP_INI_SYSTEM|PHP_INI_PERDIR,		OnUpdateLong,			upload_max_filesize,	php_core_globals,	core_globals)
-diff -urNp php-7.2.31.org/main/php_config.h.in php-7.2.31/main/php_config.h.in
---- php-7.2.31.org/main/php_config.h.in	2020-05-12 16:02:21.000000000 +0900
-+++ php-7.2.31/main/php_config.h.in	2020-05-25 02:47:34.070693835 +0900
+diff -urNp php-7.2.34.org/main/php_config.h.in php-7.2.34/main/php_config.h.in
+--- php-7.2.34.org/main/php_config.h.in	2020-09-30 14:15:50.000000000 +0900
++++ php-7.2.34/main/php_config.h.in	2022-02-02 16:12:12.132675422 +0900
 @@ -2363,6 +2363,9 @@
  #undef PHP_PWRITE_64
  
@@ -844,9 +852,9 @@ diff -urNp php-7.2.31.org/main/php_config.h.in php-7.2.31/main/php_config.h.in
  #undef PHP_SIGCHILD
  
  /* uname -a output */
-diff -urNp php-7.2.31.org/main/php_globals.h php-7.2.31/main/php_globals.h
---- php-7.2.31.org/main/php_globals.h	2020-05-12 16:02:21.000000000 +0900
-+++ php-7.2.31/main/php_globals.h	2020-05-25 02:47:34.071693865 +0900
+diff -urNp php-7.2.34.org/main/php_globals.h php-7.2.34/main/php_globals.h
+--- php-7.2.34.org/main/php_globals.h	2020-09-30 14:15:50.000000000 +0900
++++ php-7.2.34/main/php_globals.h	2022-02-02 16:12:12.133675452 +0900
 @@ -168,6 +168,8 @@ struct _php_core_globals {
  
  	zend_bool in_error_log;
@@ -856,9 +864,9 @@ diff -urNp php-7.2.31.org/main/php_globals.h php-7.2.31/main/php_globals.h
  #ifdef PHP_WIN32
  	zend_bool windows_show_crt_warning;
  #endif
-diff -urNp php-7.2.31.org/php.ini-development php-7.2.31/php.ini-development
---- php-7.2.31.org/php.ini-development	2020-05-12 16:02:27.000000000 +0900
-+++ php-7.2.31/php.ini-development	2020-05-25 02:47:34.071693865 +0900
+diff -urNp php-7.2.34.org/php.ini-development php-7.2.34/php.ini-development
+--- php-7.2.34.org/php.ini-development	2020-09-30 14:15:56.000000000 +0900
++++ php-7.2.34/php.ini-development	2022-02-02 16:12:12.133675452 +0900
 @@ -297,6 +297,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1
@@ -871,9 +879,9 @@ diff -urNp php-7.2.31.org/php.ini-development php-7.2.31/php.ini-development
  ; open_basedir, if set, limits all file operations to the defined directory
  ; and below.  This directive makes most sense if used in a per-directory
  ; or per-virtualhost web server configuration file.
-diff -urNp php-7.2.31.org/php.ini-production php-7.2.31/php.ini-production
---- php-7.2.31.org/php.ini-production	2020-05-12 16:02:27.000000000 +0900
-+++ php-7.2.31/php.ini-production	2020-05-25 02:47:34.072693894 +0900
+diff -urNp php-7.2.34.org/php.ini-production php-7.2.34/php.ini-production
+--- php-7.2.34.org/php.ini-production	2020-09-30 14:15:56.000000000 +0900
++++ php-7.2.34/php.ini-production	2022-02-02 16:12:12.134675481 +0900
 @@ -297,6 +297,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1

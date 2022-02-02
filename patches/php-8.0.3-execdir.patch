@@ -1,20 +1,27 @@
-diff -urNp php-8.0.3.org/configure php-8.0.3/configure
+diff -ruNp php-8.0.3.org/configure php-8.0.3/configure
 --- php-8.0.3.org/configure	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/configure	2021-03-13 00:32:22.446105091 +0900
-@@ -17769,6 +17769,45 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
++++ php-8.0.3/configure	2022-02-02 02:24:49.669771517 +0900
+@@ -1895,6 +1895,8 @@ General settings:
+                           [PREFIX/lib]
+   --with-config-file-scan-dir=PATH
+                           Set the path where to scan for configuration files
++  --with-exec-dir=DIR     Only allow executables in DIR
++                          [[Default: /var/lib/php/bin]]
+   --enable-sigchild       Enable PHP's own SIGCHLD handler
+   --enable-libgcc         Enable explicitly linking against libgcc
+   --disable-short-tags    Disable the short-form <? start tag by default
+@@ -17769,6 +17771,44 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
  
-+echo $ac_n "checking for safe mode exec dir""... $ac_c" 1>&6
-+echo "configure:20296: checking for safe mode exec dir" >&5
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for exec dir" >&5
++$as_echo_n "checking for exec dir... " >&6; }
 +
 +php_with_exec_dir=no
 +
-+
-+# Check whether --with-exec-dir or --without-exec-dir was given.
-+if test "${with_exec_dir+set}" = set; then
-+  withval="$with_exec_dir"
-+  PHP_EXEC_DIR=$withval
++# Check whether --with-exec-dir was given.
++if test "${with_exec_dir+set}" = set; then :
++  withval=$with_exec_dir; PHP_EXEC_DIR=$withval
 +else
 +
 +  PHP_EXEC_DIR=no
@@ -30,34 +37,35 @@ diff -urNp php-8.0.3.org/configure php-8.0.3/configure
 +
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
-+  cat >> confdefs.h <<EOF
++
++cat >>confdefs.h <<_ACEOF
 +#define PHP_EXEC_DIR "$PHP_EXEC_DIR"
-+EOF
++_ACEOF
 +
-+  echo "$ac_t""$PHP_EXEC_DIR" 1>&6
++   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PHP_EXEC_DIR" >&5
++$as_echo "$PHP_EXEC_DIR" >&6; }
 +else
-+  cat >> confdefs.h <<\EOF
-+#define PHP_EXEC_DIR "/usr/local/php/bin"
-+EOF
 +
-+  echo "$ac_t""/usr/local/php/bin" 1>&6
++$as_echo "#define PHP_EXEC_DIR \"/var/lib/php/bin\"" >>confdefs.h
++
++   { $as_echo "$as_me:${as_lineno-$LINENO}: result: /var/lib/php/bin" >&5
++$as_echo "/var/lib/php/bin" >&6; }
 +fi
-+
 +
  php_enable_sigchild=no
  
  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PHP's own SIGCHLD handler" >&5
-diff -urNp php-8.0.3.org/configure.ac php-8.0.3/configure.ac
+diff -ruNp php-8.0.3.org/configure.ac php-8.0.3/configure.ac
 --- php-8.0.3.org/configure.ac	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/configure.ac	2021-03-13 00:32:22.448105150 +0900
++++ php-8.0.3/configure.ac	2022-02-02 02:21:34.890025777 +0900
 @@ -869,6 +869,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
  
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
 +AC_MSG_CHECKING([for exec dir])
 +PHP_ARG_WITH(exec-dir,,
-+[  --with-exec-dir[=DIR]   Only allow executables in DIR
-+                          [/var/lib/php/bin]], no, no)
++[  --with-exec-dir=DIR     Only allow executables in DIR
++                          [[Default: /var/lib/php/bin]]], no, no)
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
 +   AC_DEFINE_UNQUOTED(PHP_EXEC_DIR, "$PHP_EXEC_DIR", [ ])
@@ -70,9 +78,9 @@ diff -urNp php-8.0.3.org/configure.ac php-8.0.3/configure.ac
  PHP_ARG_ENABLE([sigchild],
    [whether to enable PHP's own SIGCHLD handler],
    [AS_HELP_STRING([--enable-sigchild],
-diff -urNp php-8.0.3.org/ext/pcntl/pcntl.c php-8.0.3/ext/pcntl/pcntl.c
+diff -ruNp php-8.0.3.org/ext/pcntl/pcntl.c php-8.0.3/ext/pcntl/pcntl.c
 --- php-8.0.3.org/ext/pcntl/pcntl.c	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/ext/pcntl/pcntl.c	2021-03-13 00:32:22.448105150 +0900
++++ php-8.0.3/ext/pcntl/pcntl.c	2022-02-02 02:21:34.890025777 +0900
 @@ -54,6 +54,9 @@
  # endif
  #endif
@@ -139,9 +147,9 @@ diff -urNp php-8.0.3.org/ext/pcntl/pcntl.c php-8.0.3/ext/pcntl/pcntl.c
  	efree(argv);
  
  	RETURN_FALSE;
-diff -urNp php-8.0.3.org/ext/standard/exec.c php-8.0.3/ext/standard/exec.c
+diff -ruNp php-8.0.3.org/ext/standard/exec.c php-8.0.3/ext/standard/exec.c
 --- php-8.0.3.org/ext/standard/exec.c	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/ext/standard/exec.c	2021-03-13 00:54:15.590875979 +0900
++++ php-8.0.3/ext/standard/exec.c	2022-02-02 02:21:34.891025806 +0900
 @@ -116,7 +116,7 @@ PHPAPI int php_exec(int type, const char
  	FILE *fp;
  	char *buf;
@@ -155,7 +163,7 @@ diff -urNp php-8.0.3.org/ext/standard/exec.c php-8.0.3/ext/standard/exec.c
  	sig_handler = signal (SIGCHLD, SIG_DFL);
  #endif
  
-+	jcmd = get_jailed_shell_cmd (cmd);
++	jcmd = get_jailed_shell_cmd ((char *) cmd);
 +
  #ifdef PHP_WIN32
 -	fp = VCWD_POPEN(cmd, "rb");
@@ -708,9 +716,9 @@ diff -urNp php-8.0.3.org/ext/standard/exec.c php-8.0.3/ext/standard/exec.c
  
  	stream = php_stream_fopen_from_pipe(in, "rb");
  	ret = php_stream_copy_to_mem(stream, PHP_STREAM_COPY_ALL, 0);
-diff -urNp php-8.0.3.org/ext/standard/exec.h php-8.0.3/ext/standard/exec.h
+diff -ruNp php-8.0.3.org/ext/standard/exec.h php-8.0.3/ext/standard/exec.h
 --- php-8.0.3.org/ext/standard/exec.h	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/ext/standard/exec.h	2021-03-13 00:51:23.141785426 +0900
++++ php-8.0.3/ext/standard/exec.h	2022-02-02 02:21:34.891025806 +0900
 @@ -20,6 +20,32 @@
  PHP_MINIT_FUNCTION(proc_open);
  PHP_MINIT_FUNCTION(exec);
@@ -744,9 +752,9 @@ diff -urNp php-8.0.3.org/ext/standard/exec.h php-8.0.3/ext/standard/exec.h
  PHPAPI zend_string *php_escape_shell_cmd(const char *str);
  PHPAPI zend_string *php_escape_shell_arg(const char *str);
  PHPAPI int php_exec(int type, const char *cmd, zval *array, zval *return_value);
-diff -urNp php-8.0.3.org/ext/standard/file.c php-8.0.3/ext/standard/file.c
+diff -ruNp php-8.0.3.org/ext/standard/file.c php-8.0.3/ext/standard/file.c
 --- php-8.0.3.org/ext/standard/file.c	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/ext/standard/file.c	2021-03-13 00:32:22.451105238 +0900
++++ php-8.0.3/ext/standard/file.c	2022-02-02 02:21:34.892025836 +0900
 @@ -914,7 +914,7 @@ PHPAPI PHP_FUNCTION(fclose)
  /* {{{ Execute a command and open either a read or a write pipe to it */
  PHP_FUNCTION(popen)
@@ -780,9 +788,9 @@ diff -urNp php-8.0.3.org/ext/standard/file.c php-8.0.3/ext/standard/file.c
  	if (!fp) {
  		php_error_docref2(NULL, command, posix_mode, E_WARNING, "%s", strerror(errno));
  		efree(posix_mode);
-diff -urNp php-8.0.3.org/ext/standard/proc_open.c php-8.0.3/ext/standard/proc_open.c
+diff -ruNp php-8.0.3.org/ext/standard/proc_open.c php-8.0.3/ext/standard/proc_open.c
 --- php-8.0.3.org/ext/standard/proc_open.c	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/ext/standard/proc_open.c	2021-03-13 00:49:53.599142202 +0900
++++ php-8.0.3/ext/standard/proc_open.c	2022-02-02 02:21:34.893025865 +0900
 @@ -42,6 +42,8 @@
   * around the alternate code. */
  #ifdef PHP_CAN_SUPPORT_PROC_OPEN
@@ -831,9 +839,9 @@ diff -urNp php-8.0.3.org/ext/standard/proc_open.c php-8.0.3/ext/standard/proc_op
  	}
  
  #ifdef PHP_WIN32
-diff -urNp php-8.0.3.org/main/main.c php-8.0.3/main/main.c
+diff -ruNp php-8.0.3.org/main/main.c php-8.0.3/main/main.c
 --- php-8.0.3.org/main/main.c	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/main/main.c	2021-03-13 00:32:22.453105297 +0900
++++ php-8.0.3/main/main.c	2022-02-02 02:21:34.893025865 +0900
 @@ -631,6 +631,10 @@ PHP_INI_MH(OnChangeBrowscap);
   * PHP_INCLUDE_PATH
   */
@@ -853,9 +861,9 @@ diff -urNp php-8.0.3.org/main/main.c php-8.0.3/main/main.c
  
  	STD_PHP_INI_BOOLEAN("file_uploads",			"1",		PHP_INI_SYSTEM,		OnUpdateBool,			file_uploads,			php_core_globals,	core_globals)
  	STD_PHP_INI_ENTRY("upload_max_filesize",	"2M",		PHP_INI_SYSTEM|PHP_INI_PERDIR,		OnUpdateLong,			upload_max_filesize,	php_core_globals,	core_globals)
-diff -urNp php-8.0.3.org/main/php_config.h.in php-8.0.3/main/php_config.h.in
+diff -ruNp php-8.0.3.org/main/php_config.h.in php-8.0.3/main/php_config.h.in
 --- php-8.0.3.org/main/php_config.h.in	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/main/php_config.h.in	2021-03-13 00:32:22.453105297 +0900
++++ php-8.0.3/main/php_config.h.in	2022-02-02 02:21:34.894025895 +0900
 @@ -1954,6 +1954,9 @@
  #undef PHP_PWRITE_64
  
@@ -866,9 +874,9 @@ diff -urNp php-8.0.3.org/main/php_config.h.in php-8.0.3/main/php_config.h.in
  #undef PHP_SIGCHILD
  
  /* uname -a output */
-diff -urNp php-8.0.3.org/main/php_globals.h php-8.0.3/main/php_globals.h
+diff -ruNp php-8.0.3.org/main/php_globals.h php-8.0.3/main/php_globals.h
 --- php-8.0.3.org/main/php_globals.h	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/main/php_globals.h	2021-03-13 00:32:22.454105327 +0900
++++ php-8.0.3/main/php_globals.h	2022-02-02 02:21:34.894025895 +0900
 @@ -158,6 +158,8 @@ struct _php_core_globals {
  
  	zend_bool in_error_log;
@@ -878,9 +886,9 @@ diff -urNp php-8.0.3.org/main/php_globals.h php-8.0.3/main/php_globals.h
  #ifdef PHP_WIN32
  	zend_bool windows_show_crt_warning;
  #endif
-diff -urNp php-8.0.3.org/php.ini-development php-8.0.3/php.ini-development
+diff -ruNp php-8.0.3.org/php.ini-development php-8.0.3/php.ini-development
 --- php-8.0.3.org/php.ini-development	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/php.ini-development	2021-03-13 00:32:22.454105327 +0900
++++ php-8.0.3/php.ini-development	2022-02-02 02:21:34.895025924 +0900
 @@ -310,6 +310,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1
@@ -893,9 +901,9 @@ diff -urNp php-8.0.3.org/php.ini-development php-8.0.3/php.ini-development
  ; open_basedir, if set, limits all file operations to the defined directory
  ; and below.  This directive makes most sense if used in a per-directory
  ; or per-virtualhost web server configuration file.
-diff -urNp php-8.0.3.org/php.ini-production php-8.0.3/php.ini-production
+diff -ruNp php-8.0.3.org/php.ini-production php-8.0.3/php.ini-production
 --- php-8.0.3.org/php.ini-production	2021-03-03 01:37:06.000000000 +0900
-+++ php-8.0.3/php.ini-production	2021-03-13 00:32:22.455105357 +0900
++++ php-8.0.3/php.ini-production	2022-02-02 02:21:34.895025924 +0900
 @@ -310,6 +310,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1

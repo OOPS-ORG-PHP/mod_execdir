@@ -5,8 +5,8 @@ diff -urNp php-8.1.2.org/configure php-8.1.2/configure
                            [PREFIX/lib]
    --with-config-file-scan-dir=PATH
                            Set the path where to scan for configuration files
-+  --with-exec-dir=DIR   Only allow executables in DIR
-+                          /var/lib/php/bin
++  --with-exec-dir=DIR     Only allow executables in DIR
++                          [Default: /var/lib/php/bin]
    --enable-sigchild       Enable PHP's own SIGCHLD handler
    --enable-libgcc         Enable explicitly linking against libgcc
    --disable-short-tags    Disable the short-form <? start tag by default
@@ -65,8 +65,8 @@ diff -urNp php-8.1.2.org/configure.ac php-8.1.2/configure.ac
  
 +AC_MSG_CHECKING([for exec dir])
 +PHP_ARG_WITH(exec-dir,,
-+[  --with-exec-dir[=DIR]   Only allow executables in DIR
-+                          [/var/lib/php/bin]], no, no)
++[  --with-exec-dir=DIR     Only allow executables in DIR
++                          [[Default: /var/lib/php/bin]]], no, no)
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
 +   AC_DEFINE_UNQUOTED(PHP_EXEC_DIR, "$PHP_EXEC_DIR", [ ])

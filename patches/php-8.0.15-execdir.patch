@@ -1,20 +1,29 @@
-diff -urNp php-7.2.0.org/configure php-7.2.0/configure
---- php-7.2.0.org/configure	2017-08-29 20:07:15.000000000 +0900
-+++ php-7.2.0/configure	2017-09-01 01:55:38.669563560 +0900
-@@ -16039,6 +16039,45 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
+diff -urNp php-8.0.15.org/configure php-8.0.15/configure
+--- php-8.0.15.org/configure	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/configure	2022-02-02 01:49:15.007501467 +0900
+@@ -1895,6 +1895,8 @@ General settings:
+                           [PREFIX/lib]
+   --with-config-file-scan-dir=PATH
+                           Set the path where to scan for configuration files
++  --with-exec-dir=DIR     Only allow executables in DIR
++                          [Default: /var/lib/php/bin]
+   --enable-sigchild       Enable PHP's own SIGCHLD handler
+   --enable-libgcc         Enable explicitly linking against libgcc
+   --disable-short-tags    Disable the short-form <? start tag by default
+@@ -17781,6 +17783,46 @@ $as_echo "$PHP_CONFIG_FILE_SCAN_DIR" >&6
+ 
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
- 
-+echo $ac_n "checking for safe mode exec dir""... $ac_c" 1>&6
-+echo "configure:20296: checking for safe mode exec dir" >&5
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for exec dir" >&5
++$as_echo_n "checking for exec dir... " >&6; }
 +
 +php_with_exec_dir=no
 +
 +
-+# Check whether --with-exec-dir or --without-exec-dir was given.
-+if test "${with_exec_dir+set}" = set; then
-+  withval="$with_exec_dir"
-+  PHP_EXEC_DIR=$withval
++
++# Check whether --with-exec-dir was given.
++if test "${with_exec_dir+set}" = set; then :
++  withval=$with_exec_dir; PHP_EXEC_DIR=$withval
 +else
 +
 +  PHP_EXEC_DIR=no
@@ -30,27 +39,28 @@ diff -urNp php-7.2.0.org/configure php-7.2.0/configure
 +
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
-+  cat >> confdefs.h <<EOF
++
++cat >>confdefs.h <<_ACEOF
 +#define PHP_EXEC_DIR "$PHP_EXEC_DIR"
-+EOF
++_ACEOF
 +
-+  echo "$ac_t""$PHP_EXEC_DIR" 1>&6
++   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PHP_EXEC_DIR" >&5
++$as_echo "$PHP_EXEC_DIR" >&6; }
 +else
-+  cat >> confdefs.h <<\EOF
-+#define PHP_EXEC_DIR "/usr/local/php/bin"
-+EOF
 +
-+  echo "$ac_t""/usr/local/php/bin" 1>&6
++$as_echo "#define PHP_EXEC_DIR \"/var/lib/php/bin\"" >>confdefs.h
++
++   { $as_echo "$as_me:${as_lineno-$LINENO}: result: /var/lib/php/bin" >&5
++$as_echo "/var/lib/php/bin" >&6; }
 +fi
 +
-+
+ 
  php_enable_sigchild=no
  
- { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PHP's own SIGCHLD handler" >&5
-diff -urNp php-7.2.0.org/configure.ac php-7.2.0/configure.ac
---- php-7.2.0.org/configure.ac	2017-08-29 20:07:08.000000000 +0900
-+++ php-7.2.0/configure.ac	2017-09-01 01:55:38.672563720 +0900
-@@ -910,6 +910,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
+diff -urNp php-8.0.15.org/configure.ac php-8.0.15/configure.ac
+--- php-8.0.15.org/configure.ac	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/configure.ac	2022-02-02 01:37:44.166131555 +0900
+@@ -880,6 +880,19 @@ AC_MSG_RESULT([$PHP_CONFIG_FILE_SCAN_DIR
  
  test -n "$DEBUG_CFLAGS" && CFLAGS="$CFLAGS $DEBUG_CFLAGS"
  
@@ -60,19 +70,19 @@ diff -urNp php-7.2.0.org/configure.ac php-7.2.0/configure.ac
 +                          [[Default: /var/lib/php/bin]]], no, no)
 +
 +if test "$PHP_EXEC_DIR" != "no" && test "$PHP_EXEC_DIR" != "yes" ; then
-+	AC_DEFINE_UNQUOTED(PHP_EXEC_DIR, "$PHP_EXEC_DIR", [ ])
-+	AC_MSG_RESULT([$PHP_EXEC_DIR])
++   AC_DEFINE_UNQUOTED(PHP_EXEC_DIR, "$PHP_EXEC_DIR", [ ])
++   AC_MSG_RESULT([$PHP_EXEC_DIR])
 +else
-+	AC_DEFINE(PHP_EXEC_DIR, "/var/lib/php/bin", [ ])
-+	AC_MSG_RESULT([/var/lib/php/bin])
++   AC_DEFINE(PHP_EXEC_DIR, "/var/lib/php/bin", [ ])
++   AC_MSG_RESULT([/var/lib/php/bin])
 +fi
 +
- PHP_ARG_ENABLE(sigchild, whether to enable PHP's own SIGCHLD handler,
- [  --enable-sigchild       Enable PHP's own SIGCHLD handler], no, no)
- 
-diff -urNp php-7.2.0.org/ext/pcntl/pcntl.c php-7.2.0/ext/pcntl/pcntl.c
---- php-7.2.0.org/ext/pcntl/pcntl.c	2017-08-29 20:07:11.000000000 +0900
-+++ php-7.2.0/ext/pcntl/pcntl.c	2017-09-01 01:55:38.673563773 +0900
+ PHP_ARG_ENABLE([sigchild],
+   [whether to enable PHP's own SIGCHLD handler],
+   [AS_HELP_STRING([--enable-sigchild],
+diff -urNp php-8.0.15.org/ext/pcntl/pcntl.c php-8.0.15/ext/pcntl/pcntl.c
+--- php-8.0.15.org/ext/pcntl/pcntl.c	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/ext/pcntl/pcntl.c	2022-02-02 01:37:44.166131555 +0900
 @@ -54,6 +54,9 @@
  # endif
  #endif
@@ -83,17 +93,17 @@ diff -urNp php-7.2.0.org/ext/pcntl/pcntl.c php-7.2.0/ext/pcntl/pcntl.c
  ZEND_DECLARE_MODULE_GLOBALS(pcntl)
  static PHP_GINIT_FUNCTION(pcntl);
  
-@@ -903,7 +906,7 @@ PHP_FUNCTION(pcntl_exec)
+@@ -787,7 +790,7 @@ PHP_FUNCTION(pcntl_exec)
  	char **current_arg, **pair;
- 	int pair_length;
+ 	size_t pair_length;
  	zend_string *key;
 -	char *path;
 +	char *path, *jpath = NULL;
  	size_t path_len;
  	zend_ulong key_num;
  
-@@ -911,6 +914,11 @@ PHP_FUNCTION(pcntl_exec)
- 		return;
+@@ -795,6 +798,11 @@ PHP_FUNCTION(pcntl_exec)
+ 		RETURN_THROWS();
  	}
  
 +	if (strlen(path) != path_len) {
@@ -103,17 +113,17 @@ diff -urNp php-7.2.0.org/ext/pcntl/pcntl.c php-7.2.0/ext/pcntl/pcntl.c
 + 	
  	if (ZEND_NUM_ARGS() > 1) {
  		/* Build argument list */
- 		args_hash = Z_ARRVAL_P(args);
-@@ -933,6 +941,8 @@ PHP_FUNCTION(pcntl_exec)
- 		*(argv+1) = NULL;
+ 		SEPARATE_ARRAY(args);
+@@ -822,6 +830,8 @@ PHP_FUNCTION(pcntl_exec)
+ 		argv[1] = NULL;
  	}
  
 +	jpath = get_jailed_shell_cmd(path);
 +
  	if ( ZEND_NUM_ARGS() == 3 ) {
  		/* Build environment pair list */
- 		envs_hash = Z_ARRVAL_P(envs);
-@@ -963,7 +973,8 @@ PHP_FUNCTION(pcntl_exec)
+ 		SEPARATE_ARRAY(envs);
+@@ -859,7 +869,8 @@ PHP_FUNCTION(pcntl_exec)
  		} ZEND_HASH_FOREACH_END();
  		*(pair) = NULL;
  
@@ -123,7 +133,7 @@ diff -urNp php-7.2.0.org/ext/pcntl/pcntl.c php-7.2.0/ext/pcntl/pcntl.c
  			PCNTL_G(last_error) = errno;
  			php_error_docref(NULL, E_WARNING, "Error has occurred: (errno %d) %s", errno, strerror(errno));
  		}
-@@ -973,12 +984,14 @@ PHP_FUNCTION(pcntl_exec)
+@@ -869,12 +880,14 @@ PHP_FUNCTION(pcntl_exec)
  		efree(envp);
  	} else {
  
@@ -139,23 +149,23 @@ diff -urNp php-7.2.0.org/ext/pcntl/pcntl.c php-7.2.0/ext/pcntl/pcntl.c
  	efree(argv);
  
  	RETURN_FALSE;
-diff -urNp php-7.2.0.org/ext/standard/exec.c php-7.2.0/ext/standard/exec.c
---- php-7.2.0.org/ext/standard/exec.c	2017-08-29 20:07:12.000000000 +0900
-+++ php-7.2.0/ext/standard/exec.c	2017-09-01 02:00:24.854870819 +0900
-@@ -100,7 +100,7 @@ PHPAPI int php_exec(int type, char *cmd,
+diff -urNp php-8.0.15.org/ext/standard/exec.c php-8.0.15/ext/standard/exec.c
+--- php-8.0.15.org/ext/standard/exec.c	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/ext/standard/exec.c	2022-02-02 01:37:44.167131585 +0900
+@@ -116,7 +116,7 @@ PHPAPI int php_exec(int type, const char
+ 	FILE *fp;
  	char *buf;
- 	size_t l = 0;
  	int pclose_return;
 -	char *b, *d=NULL;
 +	char *jcmd, *b=NULL, *d=NULL;
  	php_stream *stream;
  	size_t buflen, bufl = 0;
  #if PHP_SIGCHILD
-@@ -111,15 +111,19 @@ PHPAPI int php_exec(int type, char *cmd,
+@@ -127,15 +127,19 @@ PHPAPI int php_exec(int type, const char
  	sig_handler = signal (SIGCHLD, SIG_DFL);
  #endif
  
-+	jcmd = get_jailed_shell_cmd (cmd);
++	jcmd = get_jailed_shell_cmd ((char *) cmd);
 +
  #ifdef PHP_WIN32
 -	fp = VCWD_POPEN(cmd, "rb");
@@ -174,7 +184,7 @@ diff -urNp php-7.2.0.org/ext/standard/exec.c php-7.2.0/ext/standard/exec.c
  
  	stream = php_stream_fopen_from_pipe(fp, "rb");
  
-@@ -473,6 +477,504 @@ PHPAPI zend_string *php_escape_shell_arg
+@@ -468,6 +472,504 @@ PHPAPI zend_string *php_escape_shell_arg
  }
  /* }}} */
  
@@ -453,15 +463,15 @@ diff -urNp php-7.2.0.org/ext/standard/exec.c php-7.2.0/ext/standard/exec.c
 +		zbuf_r = php_trim (zbuf, NULL, 0, 3);
 +
 +		_tpath = estrdup (ZSTR_VAL (zbuf_r));
-+		zend_string_free (zbuf);
-+		zend_string_free (zbuf_r);
++		zend_string_release_ex (zbuf, 0);
++		zend_string_release_ex (zbuf_r, 0);
 +
 +		zbuf = zend_string_init (debug_cmd, strlen (debug_cmd), 0);
 +		zbuf_r = php_trim (zbuf, NULL, 0, 3);
 +
 +		x_cmd = estrdup (ZSTR_VAL (zbuf_r));
-+		zend_string_free (zbuf);
-+		zend_string_free (zbuf_r);
++		zend_string_release_ex (zbuf, 0);
++		zend_string_release_ex (zbuf_r, 0);
 +	}
 +
 +	_cmd = ( x_cmd[0] == '/' ) ? estrdup (x_cmd + 1) : estrdup (x_cmd);
@@ -675,11 +685,11 @@ diff -urNp php-7.2.0.org/ext/standard/exec.c php-7.2.0/ext/standard/exec.c
 +	return buf; 
 +}
 +/* }}} */
-+
- /* {{{ proto string escapeshellcmd(string command)
-    Escape shell metacharacters */
++ 
+ /* {{{ Escape shell metacharacters */
  PHP_FUNCTION(escapeshellcmd)
-@@ -525,20 +1027,29 @@ PHP_FUNCTION(shell_exec)
+ {
+@@ -516,6 +1018,7 @@ PHP_FUNCTION(shell_exec)
  	char *command;
  	size_t command_len;
  	zend_string *ret;
@@ -687,14 +697,10 @@ diff -urNp php-7.2.0.org/ext/standard/exec.c php-7.2.0/ext/standard/exec.c
  	php_stream *stream;
  
  	ZEND_PARSE_PARAMETERS_START(1, 1)
- 		Z_PARAM_STRING(command, command_len)
- 	ZEND_PARSE_PARAMETERS_END();
+@@ -531,14 +1034,17 @@ PHP_FUNCTION(shell_exec)
+ 		RETURN_THROWS();
+ 	}
  
-+	if (strlen(command) != command_len) {
-+		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
-+		RETURN_FALSE;
-+	}
-+
 +	jcommand = get_jailed_shell_cmd (command);
  #ifdef PHP_WIN32
 -	if ((in=VCWD_POPEN(command, "rt"))==NULL) {
@@ -712,10 +718,10 @@ diff -urNp php-7.2.0.org/ext/standard/exec.c php-7.2.0/ext/standard/exec.c
  
  	stream = php_stream_fopen_from_pipe(in, "rb");
  	ret = php_stream_copy_to_mem(stream, PHP_STREAM_COPY_ALL, 0);
-diff -urNp php-7.2.0.org/ext/standard/exec.h php-7.2.0/ext/standard/exec.h
---- php-7.2.0.org/ext/standard/exec.h	2017-08-29 20:07:12.000000000 +0900
-+++ php-7.2.0/ext/standard/exec.h	2017-09-01 01:55:38.675563880 +0900
-@@ -35,8 +35,33 @@ PHP_FUNCTION(proc_nice);
+diff -urNp php-8.0.15.org/ext/standard/exec.h php-8.0.15/ext/standard/exec.h
+--- php-8.0.15.org/ext/standard/exec.h	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/ext/standard/exec.h	2022-02-02 01:37:44.167131585 +0900
+@@ -20,6 +20,32 @@
  PHP_MINIT_FUNCTION(proc_open);
  PHP_MINIT_FUNCTION(exec);
  
@@ -741,19 +747,18 @@ diff -urNp php-7.2.0.org/ext/standard/exec.h php-7.2.0/ext/standard/exec.h
 +	int    debug;
 +} CmdArgv;
 +
- PHPAPI zend_string *php_escape_shell_cmd(char *);
- PHPAPI zend_string *php_escape_shell_arg(char *);
 +char *get_jailed_shell_cmd (char *);
 +char *php_jailed_shell_cmd (char *, char *);
 +int check_quote_block (struct quote_chk_char, struct quote_value *);
- PHPAPI int php_exec(int type, char *cmd, zval *array, zval *return_value);
- 
- #endif /* EXEC_H */
-diff -urNp php-7.2.0.org/ext/standard/file.c php-7.2.0/ext/standard/file.c
---- php-7.2.0.org/ext/standard/file.c	2017-08-29 20:07:12.000000000 +0900
-+++ php-7.2.0/ext/standard/file.c	2017-09-01 01:55:38.676563933 +0900
-@@ -926,7 +926,7 @@ PHPAPI PHP_FUNCTION(fclose)
-    Execute a command and open either a read or a write pipe to it */
++
+ PHPAPI zend_string *php_escape_shell_cmd(const char *str);
+ PHPAPI zend_string *php_escape_shell_arg(const char *str);
+ PHPAPI int php_exec(int type, const char *cmd, zval *array, zval *return_value);
+diff -urNp php-8.0.15.org/ext/standard/file.c php-8.0.15/ext/standard/file.c
+--- php-8.0.15.org/ext/standard/file.c	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/ext/standard/file.c	2022-02-02 01:37:44.168131614 +0900
+@@ -914,7 +914,7 @@ PHPAPI PHP_FUNCTION(fclose)
+ /* {{{ Execute a command and open either a read or a write pipe to it */
  PHP_FUNCTION(popen)
  {
 -	char *command, *mode;
@@ -761,7 +766,7 @@ diff -urNp php-7.2.0.org/ext/standard/file.c php-7.2.0/ext/standard/file.c
  	size_t command_len, mode_len;
  	FILE *fp;
  	php_stream *stream;
-@@ -937,6 +937,11 @@ PHP_FUNCTION(popen)
+@@ -925,6 +925,11 @@ PHP_FUNCTION(popen)
  		Z_PARAM_STRING(mode, mode_len)
  	ZEND_PARSE_PARAMETERS_END();
  
@@ -773,9 +778,9 @@ diff -urNp php-7.2.0.org/ext/standard/file.c php-7.2.0/ext/standard/file.c
  	posix_mode = estrndup(mode, mode_len);
  #ifndef PHP_WIN32
  	{
-@@ -947,7 +952,10 @@ PHP_FUNCTION(popen)
+@@ -946,7 +951,10 @@ PHP_FUNCTION(popen)
+ 		RETURN_THROWS();
  	}
- #endif
  
 -	fp = VCWD_POPEN(command, posix_mode);
 +	jcmd = get_jailed_shell_cmd (command);
@@ -785,38 +790,61 @@ diff -urNp php-7.2.0.org/ext/standard/file.c php-7.2.0/ext/standard/file.c
  	if (!fp) {
  		php_error_docref2(NULL, command, posix_mode, E_WARNING, "%s", strerror(errno));
  		efree(posix_mode);
-diff -urNp php-7.2.0.org/ext/standard/proc_open.c php-7.2.0/ext/standard/proc_open.c
---- php-7.2.0.org/ext/standard/proc_open.c	2017-08-29 20:07:12.000000000 +0900
-+++ php-7.2.0/ext/standard/proc_open.c	2017-09-01 01:55:38.677563987 +0900
-@@ -406,7 +406,7 @@ struct php_proc_open_descriptor_item {
-    Run a process with more control over it's file descriptors */
- PHP_FUNCTION(proc_open)
- {
--	char *command, *cwd=NULL;
-+	char *command, *jcommand, *cwd=NULL;
- 	size_t command_len, cwd_len = 0;
- 	zval *descriptorspec;
- 	zval *pipes;
-@@ -455,7 +455,14 @@ PHP_FUNCTION(proc_open)
- 		Z_PARAM_ARRAY_EX(other_options, 1, 0)
- 	ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
+diff -urNp php-8.0.15.org/ext/standard/proc_open.c php-8.0.15/ext/standard/proc_open.c
+--- php-8.0.15.org/ext/standard/proc_open.c	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/ext/standard/proc_open.c	2022-02-02 01:37:44.169131644 +0900
+@@ -42,6 +42,8 @@
+  * around the alternate code. */
+ #ifdef PHP_CAN_SUPPORT_PROC_OPEN
  
--	command = pestrdup(command, is_persistent);
-+	if (strlen(command) != command_len) {
-+		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
-+		RETURN_FALSE;
-+	}
++extern char * get_jailed_shell_cmd (char *);
 +
-+	jcommand = get_jailed_shell_cmd (command);
-+	command = pestrdup(jcommand, is_persistent);
-+	efree (jcommand);
+ #if HAVE_OPENPTY
+ # if HAVE_PTY_H
+ #  include <pty.h>
+@@ -631,7 +633,17 @@ static char* get_command_from_array(Hash
+ 		}
+ 
+ 		if (i == 0) {
+-			command = estrdup(ZSTR_VAL(arg_str));
++			if (strlen(ZSTR_VAL(arg_str)) != ZSTR_LEN(arg_str)) {
++				php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
++				return NULL;
++			}
++			{
++				char * jcommand = get_jailed_shell_cmd (ZSTR_VAL(arg_str));
++				if (jcommand == NULL)
++					return NULL;
++				command = estrdup(jcommand);
++				efree (jcommand);
++			}
+ 		}
+ 
+ 		(*argv)[i++] = estrdup(ZSTR_VAL(arg_str));
+@@ -1068,7 +1080,18 @@ PHP_FUNCTION(proc_open)
+ 		}
+ #endif
+ 	} else {
+-		command = estrdup(ZSTR_VAL(command_str));
++		if (strlen(ZSTR_VAL(command_str)) != ZSTR_LEN(command_str)) {
++			php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
++			RETURN_FALSE;
++		}
++		{
++			char * jcommand = get_jailed_shell_cmd (ZSTR_VAL(command_str));
++			if (jcommand == NULL) {
++				RETURN_FALSE;
++			}
++			command = estrdup(jcommand);
++			efree (jcommand);
++		}
+ 	}
  
  #ifdef PHP_WIN32
- 	if (other_options) {
-diff -urNp php-7.2.0.org/main/main.c php-7.2.0/main/main.c
---- php-7.2.0.org/main/main.c	2017-08-29 20:07:14.000000000 +0900
-+++ php-7.2.0/main/main.c	2017-09-01 01:57:19.940968843 +0900
-@@ -506,6 +506,10 @@ PHP_INI_MH(OnChangeBrowscap);
+diff -urNp php-8.0.15.org/main/main.c php-8.0.15/main/main.c
+--- php-8.0.15.org/main/main.c	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/main/main.c	2022-02-02 01:37:44.169131644 +0900
+@@ -665,6 +665,10 @@ PHP_INI_MH(OnChangeBrowscap);
   * PHP_INCLUDE_PATH
   */
  
@@ -827,7 +855,7 @@ diff -urNp php-7.2.0.org/main/main.c php-7.2.0/main/main.c
   /* Windows use the internal mail */
  #if defined(PHP_WIN32)
  # define DEFAULT_SENDMAIL_PATH NULL
-@@ -568,6 +572,7 @@ PHP_INI_BEGIN()
+@@ -723,6 +727,7 @@ PHP_INI_BEGIN()
  	STD_PHP_INI_ENTRY("include_path",			PHP_INCLUDE_PATH,		PHP_INI_ALL,		OnUpdateStringUnempty,	include_path,			php_core_globals,	core_globals)
  	PHP_INI_ENTRY("max_execution_time",			"30",		PHP_INI_ALL,			OnUpdateTimeout)
  	STD_PHP_INI_ENTRY("open_basedir",			NULL,		PHP_INI_ALL,		OnUpdateBaseDir,			open_basedir,			php_core_globals,	core_globals)
@@ -835,23 +863,23 @@ diff -urNp php-7.2.0.org/main/main.c php-7.2.0/main/main.c
  
  	STD_PHP_INI_BOOLEAN("file_uploads",			"1",		PHP_INI_SYSTEM,		OnUpdateBool,			file_uploads,			php_core_globals,	core_globals)
  	STD_PHP_INI_ENTRY("upload_max_filesize",	"2M",		PHP_INI_SYSTEM|PHP_INI_PERDIR,		OnUpdateLong,			upload_max_filesize,	php_core_globals,	core_globals)
-diff -urNp php-7.2.0.org/main/php_config.h.in php-7.2.0/main/php_config.h.in
---- php-7.2.0.org/main/php_config.h.in	2017-08-29 20:07:14.000000000 +0900
-+++ php-7.2.0/main/php_config.h.in	2017-09-01 01:55:38.679564093 +0900
-@@ -2351,6 +2351,9 @@
- #undef PHP_PWRITE_64
+diff -urNp php-8.0.15.org/main/php_config.h.in php-8.0.15/main/php_config.h.in
+--- php-8.0.15.org/main/php_config.h.in	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/main/php_config.h.in	2022-02-02 01:51:08.458846654 +0900
+@@ -1872,6 +1872,9 @@
+ /* Define if your system has fork/vfork/CreateProcess */
+ #undef PHP_CAN_SUPPORT_PROC_OPEN
  
- /* */
++/* */
 +#undef PHP_EXEC_DIR
 +
-+/* */
- #undef PHP_SIGCHILD
+ /* fpm group name */
+ #undef PHP_FPM_GROUP
  
- /* uname -a output */
-diff -urNp php-7.2.0.org/main/php_globals.h php-7.2.0/main/php_globals.h
---- php-7.2.0.org/main/php_globals.h	2017-08-29 20:07:14.000000000 +0900
-+++ php-7.2.0/main/php_globals.h	2017-09-01 01:55:38.680564147 +0900
-@@ -163,6 +163,8 @@ struct _php_core_globals {
+diff -urNp php-8.0.15.org/main/php_globals.h php-8.0.15/main/php_globals.h
+--- php-8.0.15.org/main/php_globals.h	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/main/php_globals.h	2022-02-02 01:37:44.170131673 +0900
+@@ -158,6 +158,8 @@ struct _php_core_globals {
  
  	zend_bool in_error_log;
  
@@ -860,10 +888,10 @@ diff -urNp php-7.2.0.org/main/php_globals.h php-7.2.0/main/php_globals.h
  #ifdef PHP_WIN32
  	zend_bool windows_show_crt_warning;
  #endif
-diff -urNp php-7.2.0.org/php.ini-development php-7.2.0/php.ini-development
---- php-7.2.0.org/php.ini-development	2017-08-29 20:07:14.000000000 +0900
-+++ php-7.2.0/php.ini-development	2017-09-01 01:55:38.681564200 +0900
-@@ -297,6 +297,11 @@ unserialize_callback_func =
+diff -urNp php-8.0.15.org/php.ini-development php-8.0.15/php.ini-development
+--- php-8.0.15.org/php.ini-development	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/php.ini-development	2022-02-02 01:37:44.171131703 +0900
+@@ -310,6 +310,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1
  
@@ -875,10 +903,10 @@ diff -urNp php-7.2.0.org/php.ini-development php-7.2.0/php.ini-development
  ; open_basedir, if set, limits all file operations to the defined directory
  ; and below.  This directive makes most sense if used in a per-directory
  ; or per-virtualhost web server configuration file.
-diff -urNp php-7.2.0.org/php.ini-production php-7.2.0/php.ini-production
---- php-7.2.0.org/php.ini-production	2017-08-29 20:07:14.000000000 +0900
-+++ php-7.2.0/php.ini-production	2017-09-01 01:55:38.682564254 +0900
-@@ -302,6 +302,11 @@ unserialize_callback_func =
+diff -urNp php-8.0.15.org/php.ini-production php-8.0.15/php.ini-production
+--- php-8.0.15.org/php.ini-production	2022-01-18 21:16:19.000000000 +0900
++++ php-8.0.15/php.ini-production	2022-02-02 01:37:44.171131703 +0900
+@@ -310,6 +310,11 @@ unserialize_callback_func =
  ; precision.
  serialize_precision = -1
  
