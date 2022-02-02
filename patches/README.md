@@ -151,3 +151,6 @@ php_admin_flag[exec_dir] = /var/php/pool/www1/bin
 ## 4. Operation
 
 See also documents of [mod_execdir](https://github.com/OOPS-ORG-PHP/mod_execdir/blob/master/README.md) extension
+
+--
+Copyright 2022. JoungKyun.Kim All rights reserved.

@@ -8,7 +8,7 @@ PHP execdir extension
 
 ## 1. License
 
-Copyright (c) 2021 JoungKyun.Kim &lt;http://oops.org&gt; All rights reserved.
+Copyright 2022. JoungKyun.Kim &lt;http://oops.org&gt; All rights reserved.
 
 This program is under ***PHP License***.
 

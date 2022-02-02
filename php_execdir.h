@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | mod_exec v1                                                          |
   +----------------------------------------------------------------------+
-  | Copyright (c) JoungKyun.Kim                                          |
+  | Copyright 2022. JoungKyun.Kim All rights reserved.                   |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.0 of the PHP license,       |
   | that is bundled with this package in the file LICENSE, and is        |
