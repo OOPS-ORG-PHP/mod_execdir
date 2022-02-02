@@ -1,5 +1,7 @@
 # PHP Execdir Patches
 
+Copyright 2022. JoungKyun.Kim All rights reserved.
+
 ## 1. Description
 
 ***PHP Execdir Patches*** are built by patching it directly into PHP source code. This is not function as a PHP extension.
@@ -152,5 +154,3 @@ php_admin_flag[exec_dir] = /var/php/pool/www1/bin
 
 See also documents of [mod_execdir](https://github.com/OOPS-ORG-PHP/mod_execdir/blob/master/README.md) extension
 
---
-Copyright 2022. JoungKyun.Kim All rights reserved.

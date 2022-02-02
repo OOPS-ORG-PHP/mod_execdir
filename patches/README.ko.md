@@ -1,5 +1,7 @@
 # PHP Execdir Patch
 
+Copyright 2022. JoungKyun.Kim All rights reserved.
+
 ## 1. 설명
 
 ***PHP Execdir Patch*** 는 [***mod_execdir***](https://github.com/OOPS-ORG-PHP/mod_execdir/) 기능을 확장 기능으로 사용하는 것이 아니라, PHP code에 직접 pacth를 하여 PHP의 main 기능으로 사용하는 패치 입니다.
@@ -159,6 +161,3 @@ php_admin_flag[exec_dir] = /var/php/pool/www1/bin
 
 [***mod_execdir***](https://github.com/OOPS-ORG-PHP/mod_execdir/blob/master/README.ko.md) 확장 문서를 참조 하십시오.
 
-
---
-Copyright 2022. JoungKyun.Kim All rights reserved.
