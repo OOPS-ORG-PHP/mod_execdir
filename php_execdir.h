@@ -23,7 +23,7 @@
 	#define PHP_EXECDIR ""
 #endif
 
-#define EXECDIR_EXT_VERSION "1.0.6"
+#define EXECDIR_EXT_VERSION "1.0.7"
 
 extern zend_module_entry execdir_module_entry;
 #define execdir_module_ptr &execdir_module_entry
