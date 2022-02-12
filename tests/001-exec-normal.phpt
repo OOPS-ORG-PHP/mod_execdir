@@ -1,9 +1,14 @@
 --TEST--
 Check for exec_re function that return success
 --SKIPIF--
-<?php
 if ( ! extension_loaded ('execdir') ) {
-    print 'skip';
+	if ( version_compare(PHP_VERSION, "5.1.0", "<") ) {
+		dl ('execdir.so');
+		if ( ! extension_loaded ('execdir') )
+			print 'skip';
+	} else {
+	    print 'skip';
+	}
 }
 ?>
 --POST--
@@ -12,6 +17,9 @@ if ( ! extension_loaded ('execdir') ) {
 exec_dir=
 --FILE--
 <?php
+if ( version_compare(PHP_VERSION, "5.1.0", "<") )
+	dl ('execdir.so');
+
 $datafile = getcwd () . '/tests/data.txt';
 if ( ! file_exists ($datafile) )
 	$datafile = getcwd () . '/data.txt';

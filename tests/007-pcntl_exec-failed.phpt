@@ -3,7 +3,13 @@ Check for pcntl_exec_re function that has command not found
 --SKIPIF--
 <?php
 if ( ! extension_loaded ('execdir') ) {
-    print 'skip';
+	if ( version_compare (PHP_VERSION, "5.1.0", "<") ) {
+		dl ('execdir.so');
+		if ( ! extension_loaded ('execdir') )
+			print 'skip';
+	} else {
+	    print 'skip';
+	}
 }
 ?>
 --POST--
@@ -12,6 +18,9 @@ if ( ! extension_loaded ('execdir') ) {
 exec_dir=/var/lib/php/bin
 --FILE--
 <?php
+if ( version_compare (PHP_VERSION, "5.1.0", "<") )
+	dl ('execdir.so');
+
 ini_set('track_errors', true);
 $datafile = getcwd () . '/tests/data.txt';
 if ( ! file_exists ($datafile) )

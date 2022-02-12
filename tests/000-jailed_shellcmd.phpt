@@ -3,7 +3,13 @@ Check for jailed_shellcmd function
 --SKIPIF--
 <?php
 if ( ! extension_loaded ('execdir') ) {
-    print 'skip';
+	if ( version_compare (PHP_VERSION, "5.1.0", "<") ) {
+		dl ('execdir.so');
+		if ( ! extension_loaded ('execdir') )
+			print 'skip';
+	} else {
+	    print 'skip';
+	}
 }
 ?>
 --POST--
@@ -12,6 +18,9 @@ if ( ! extension_loaded ('execdir') ) {
 exec_dir=/var/lib/php71/bin
 --FILE--
 <?php
+if ( version_compare (PHP_VERSION, "5.1.0", "<") )
+	dl ('execdir.so');
+
 if ( file_exists ('tests/cmdformat.txt') )
 	$target = 'tests/cmdformat.txt';
 else

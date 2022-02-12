@@ -68,7 +68,10 @@ static const struct execdir_overload_func execdir_list[] = {
  */
 #include "execdir_arginfo.h"
 
-const zend_function_entry execdir_functions[] = {
+#if PHP_VERSION_ID >= 50300
+const
+#endif
+zend_function_entry execdir_functions[] = {
 	PHP_FE (exec_re,            arginfo_exec_re)
 	PHP_FE (system_re,          arginfo_system_re)
 	PHP_FE (passthru_re,        arginfo_passthru_re)
@@ -108,7 +111,10 @@ const zend_function_entry execdir_functions[] = {
 #if PHP_VERSION_ID < 60000
 /* {{{ execdir_hook_functions[]
  */
-const zend_function_entry execdir_hook_functions[] = {
+#if PHP_VERSION_ID >= 50300
+const
+#endif
+zend_function_entry execdir_hook_functions[] = {
 	PHP_FALIAS (exec,            exec_re,            arginfo_exec_re)
 	PHP_FALIAS (system,          system_re,          arginfo_system_re)
 	PHP_FALIAS (passthru,        passthru_re,        arginfo_passthru_re)
