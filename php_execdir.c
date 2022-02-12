@@ -813,15 +813,14 @@ PHP_FUNCTION (pcntl_exec_re)
 			convert_to_string_ex (element);
 
 			/* Length of element + equal sign + length of key + null */
-			ZEND_ASSERT(Z_STRLEN_PP(element) < SIZE_MAX &&  key_length < SIZE_MAX);
-			if ( Z_STRLEN_PP(element) < SIZE_MAX &&  key_length < SIZE_MAX ) {
+			pair_length = Z_STRLEN_PP (element) + key_length + 2;
+			if ( pair_length >= SIZE_MAX ) {
 #if PHP_VERSION_ID < 50200
-				php_error_docref (NULL TSRMLS_CC, E_ERROR, "pcntl_exec(): The element length or key length is greater than %ld.", SIZE_MAX);
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "pcntl_exec(): The element lenth and ke length are greater than %ld", SIZE_MAX);
 #else
-				php_error_docref (NULL TSRMLS_CC, E_ERROR, "The element length or key length is greater than %ld.", SIZE_MAX);
+				php_error_docref(NULL TSRMLS_CC, E_WARNING, "The element lenth and ke length are greater than %ld", SIZE_MAX);
 #endif
 			}
-			pair_length = Z_STRLEN_PP (element) + key_length + 2;
 			*pair = emalloc (pair_length);
 			strlcpy (*pair, key, key_length);
 			strlcat (*pair, "=", pair_length);
