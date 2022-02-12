@@ -132,7 +132,7 @@ If you use PHP as an ***apache module***, you can use the ***php_admin_value*** 
     ServerName domain.com
     DocumentRoot /var/www/domain.com
 
-    <IfModule php7_module>
+    <IfModule php8_module>
         php_admin_flag exec_dir /var/php/domain.com/bin
     </IfModule>
 </VirtualHost>
@@ -141,7 +141,7 @@ If you use PHP as an ***apache module***, you can use the ***php_admin_value*** 
     ServerName domain-other.com
     DocumentRoot /var/www/domain-other.com
 
-    <IfModule php7_module>
+    <IfModule php8_module>
         php_admin_flag exec_dir /var/php/domain-other.com/bin
     </IfModule>
 </VirtualHost>
