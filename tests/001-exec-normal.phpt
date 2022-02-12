@@ -1,6 +1,7 @@
 --TEST--
 Check for exec_re function that return success
 --SKIPIF--
+<?php
 if ( ! extension_loaded ('execdir') ) {
 	if ( version_compare(PHP_VERSION, "5.1.0", "<") ) {
 		dl ('execdir.so');

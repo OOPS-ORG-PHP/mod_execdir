@@ -17,10 +17,10 @@ if ( ! extension_loaded ('execdir') ) {
 --INI--
 exec_dir=/var/lib/php/bin
 --FILE--
+<?php
 if ( version_compare (PHP_VERSION, "5.1.0", "<") )
 	dl ('execdir.so');
 
-<?php
 $cmd = array (
     'ls -al &> /dev/null',
     'ls -al &> /dev/null',
